@@ -10,18 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import JobInfo from './JobInfo';
-
-interface Job {
-	id: string;
-	title: string;
-	company: string;
-	location: string;
-	type: string;
-	salary: string;
-	description: string;
-	posted: string;
-	bookmarked: boolean;
-}
+import { Job } from '@/types/job';
 
 interface JobCardProps {
 	job: Job;

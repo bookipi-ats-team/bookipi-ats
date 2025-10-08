@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import BottomNav from '@/components/BottomNav';
+import JobDetailSkeleton from '@/components/JobDetailSkeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -21,46 +22,57 @@ import {
 	CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useJob } from '@/hooks/useJobs';
 
 const JobDetail = () => {
 	const navigate = useNavigate();
-	const { id } = useParams();
+	const { id } = useParams<{ id: string }>();
 
-	// Mock data - in real app, fetch based on id
-	const job = {
-		id,
-		title: 'Senior Software Engineer',
-		company: 'Tech Corp',
-		location: 'San Francisco, CA',
-		type: 'Full-time',
-		salary: '$120k - $180k',
-		posted: '2 days ago',
-		bookmarked: false,
-		description: `We're looking for an experienced software engineer to join our growing team. 
-    You'll work on challenging problems and help build products used by millions of users worldwide.`,
-		responsibilities: [
-			'Design and develop scalable software solutions',
-			'Collaborate with cross-functional teams',
-			'Mentor junior developers',
-			'Participate in code reviews and technical discussions',
-			'Contribute to architectural decisions',
-		],
-		requirements: [
-			'5+ years of software development experience',
-			'Strong knowledge of React, TypeScript, and Node.js',
-			'Experience with cloud platforms (AWS, GCP, or Azure)',
-			'Excellent communication skills',
-			"Bachelor's degree in Computer Science or related field",
-		],
-		benefits: [
-			'Competitive salary and equity',
-			'Health, dental, and vision insurance',
-			'401(k) matching',
-			'Flexible work hours',
-			'Remote work options',
-			'Professional development budget',
-		],
-	};
+	const { data: job, isLoading, error } = useJob(id!);
+
+	if (isLoading) {
+		return (
+			<div className='min-h-screen bg-background pb-20 md:pb-0'>
+				<Navbar />
+				<div className='container mx-auto px-4 py-8'>
+					<JobDetailSkeleton />
+				</div>
+				<BottomNav />
+			</div>
+		);
+	}
+
+	if (error || !job) {
+		return (
+			<div className='min-h-screen bg-background pb-20 md:pb-0'>
+				<Navbar />
+				<div className='container mx-auto px-4 py-8'>
+					<div className='max-w-4xl mx-auto'>
+						<Button
+							variant='ghost'
+							onClick={() => navigate('/jobs')}
+							className='mb-4 transition-transform duration-200 hover:scale-105'
+						>
+							<ArrowLeft className='mr-2 h-4 w-4' />
+							Back to Job Listings
+						</Button>
+						<Card>
+							<CardContent className='p-8 text-center'>
+								<h2 className='text-2xl font-bold mb-2'>Job Not Found</h2>
+								<p className='text-muted-foreground mb-4'>
+									The job you're looking for doesn't exist or has been removed.
+								</p>
+								<Link to='/jobs'>
+									<Button>Browse Other Jobs</Button>
+								</Link>
+							</CardContent>
+						</Card>
+					</div>
+				</div>
+				<BottomNav />
+			</div>
+		);
+	}
 
 	return (
 		<div className='min-h-screen bg-background pb-20 md:pb-0'>
@@ -127,7 +139,7 @@ const JobDetail = () => {
 							</div>
 						</CardHeader>
 						<CardContent>
-							<Link to={`/jobs/${id}/apply`}>
+							<Link to={`/jobs/${job.id}/apply`}>
 								<Button className='w-full bg-gradient-primary hover:opacity-90 font-semibold text-lg py-6 transition-transform duration-200 hover:scale-105'>
 									Apply Now
 								</Button>
@@ -148,54 +160,64 @@ const JobDetail = () => {
 
 							<Separator />
 
-							<div>
-								<h3 className='font-semibold text-lg mb-3'>Responsibilities</h3>
-								<ul className='space-y-2'>
-									{job.responsibilities.map((item, index) => (
-										<li
-											key={index}
-											className='flex gap-2 text-muted-foreground'
-										>
-											<span className='text-primary'>•</span>
-											<span>{item}</span>
-										</li>
-									))}
-								</ul>
-							</div>
+							{job.responsibilities && job.responsibilities.length > 0 && (
+								<>
+									<div>
+										<h3 className='font-semibold text-lg mb-3'>
+											Responsibilities
+										</h3>
+										<ul className='space-y-2'>
+											{job.responsibilities.map((item, index) => (
+												<li
+													key={index}
+													className='flex gap-2 text-muted-foreground'
+												>
+													<span className='text-primary'>•</span>
+													<span>{item}</span>
+												</li>
+											))}
+										</ul>
+									</div>
+									<Separator />
+								</>
+							)}
 
-							<Separator />
+							{job.requirements && job.requirements.length > 0 && (
+								<>
+									<div>
+										<h3 className='font-semibold text-lg mb-3'>Requirements</h3>
+										<ul className='space-y-2'>
+											{job.requirements.map((item, index) => (
+												<li
+													key={index}
+													className='flex gap-2 text-muted-foreground'
+												>
+													<span className='text-primary'>•</span>
+													<span>{item}</span>
+												</li>
+											))}
+										</ul>
+									</div>
+									<Separator />
+								</>
+							)}
 
-							<div>
-								<h3 className='font-semibold text-lg mb-3'>Requirements</h3>
-								<ul className='space-y-2'>
-									{job.requirements.map((item, index) => (
-										<li
-											key={index}
-											className='flex gap-2 text-muted-foreground'
-										>
-											<span className='text-primary'>•</span>
-											<span>{item}</span>
-										</li>
-									))}
-								</ul>
-							</div>
-
-							<Separator />
-
-							<div>
-								<h3 className='font-semibold text-lg mb-3'>Benefits</h3>
-								<div className='grid md:grid-cols-2 gap-2'>
-									{job.benefits.map((item, index) => (
-										<Badge
-											key={index}
-											variant='secondary'
-											className='justify-start py-2'
-										>
-											{item}
-										</Badge>
-									))}
+							{job.benefits && job.benefits.length > 0 && (
+								<div>
+									<h3 className='font-semibold text-lg mb-3'>Benefits</h3>
+									<div className='grid md:grid-cols-2 gap-2'>
+										{job.benefits.map((item, index) => (
+											<Badge
+												key={index}
+												variant='secondary'
+												className='justify-start py-2'
+											>
+												{item}
+											</Badge>
+										))}
+									</div>
 								</div>
-							</div>
+							)}
 						</CardContent>
 					</Card>
 				</div>
