@@ -1,6 +1,16 @@
+import { UseFormRegister, FieldErrors } from 'react-hook-form';
 import { FormField } from './FormField';
+import { JobApplicationFormData } from '@/schemas/job-application-schema';
 
-export const PersonalInfoSection = () => {
+interface PersonalInfoSectionProps {
+	register: UseFormRegister<JobApplicationFormData>;
+	errors: FieldErrors<JobApplicationFormData>;
+}
+
+export const PersonalInfoSection = ({
+	register,
+	errors,
+}: PersonalInfoSectionProps) => {
 	return (
 		<>
 			<div className='grid md:grid-cols-2 gap-4'>
@@ -9,8 +19,17 @@ export const PersonalInfoSection = () => {
 					label='First Name'
 					required
 					placeholder='John'
+					error={errors.firstName?.message}
+					{...register('firstName')}
 				/>
-				<FormField id='lastName' label='Last Name' required placeholder='Doe' />
+				<FormField
+					id='lastName'
+					label='Last Name'
+					required
+					placeholder='Doe'
+					error={errors.lastName?.message}
+					{...register('lastName')}
+				/>
 			</div>
 
 			<FormField
@@ -19,6 +38,8 @@ export const PersonalInfoSection = () => {
 				type='email'
 				required
 				placeholder='john.doe@example.com'
+				error={errors.email?.message}
+				{...register('email')}
 			/>
 
 			<FormField
@@ -27,6 +48,8 @@ export const PersonalInfoSection = () => {
 				type='tel'
 				required
 				placeholder='+1 (555) 123-4567'
+				error={errors.phone?.message}
+				{...register('phone')}
 			/>
 
 			<FormField
@@ -34,6 +57,8 @@ export const PersonalInfoSection = () => {
 				label='Current Location'
 				required
 				placeholder='San Francisco, CA'
+				error={errors.location?.message}
+				{...register('location')}
 			/>
 		</>
 	);

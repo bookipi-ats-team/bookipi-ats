@@ -1,5 +1,6 @@
-import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import BottomNav from '@/components/BottomNav';
@@ -13,31 +14,59 @@ import {
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { AdditionalQuestionsSection } from './components/AdditionalQuestionsSection';
-import { FormField } from './components/FormField';
 import { FormSection } from './components/FormSection';
 import { PersonalInfoSection } from './components/PersonalInfoSection';
 import { ProfessionalInfoSection } from './components/ProfessionalInfoSection';
+import {
+	jobApplicationSchema,
+	JobApplicationFormData,
+} from '@/schemas/job-application-schema';
+import { useSubmitJobApplication } from '@/api/job-application';
 
 const JobApply = () => {
 	const { id } = useParams();
 	const navigate = useNavigate();
 	const { toast } = useToast();
-	const [isSubmitting, setIsSubmitting] = useState(false);
+	const submitApplicationMutation = useSubmitJobApplication();
 
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		setIsSubmitting(true);
+	const {
+		register,
+		handleSubmit,
+		formState: { errors, isSubmitting },
+	} = useForm<JobApplicationFormData>({
+		resolver: zodResolver(jobApplicationSchema),
+	});
 
-		// Simulate API call
-		setTimeout(() => {
+	const onSubmit = async (data: JobApplicationFormData) => {
+		if (!id) {
+			toast({
+				title: 'Error',
+				description: 'Job ID is missing',
+				variant: 'destructive',
+			});
+			return;
+		}
+
+		try {
+			await submitApplicationMutation.mutateAsync({
+				jobId: id,
+				data,
+			});
+
 			toast({
 				title: 'Application Submitted!',
 				description:
 					"Your application has been sent successfully. We'll be in touch soon.",
 			});
-			setIsSubmitting(false);
-			navigate('/my-applications');
-		}, 1500);
+
+			navigate('/jobs/apply/success');
+		} catch (error) {
+			toast({
+				title: 'Error',
+				description: 'Failed to submit application. Please try again.',
+				variant: 'destructive',
+			});
+		}
 	};
 
 	return (
@@ -66,17 +95,17 @@ const JobApply = () => {
 						</CardHeader>
 					</Card>
 
-					<form onSubmit={handleSubmit} className='space-y-6'>
+					<form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
 						<FormSection title='Personal Information'>
-							<PersonalInfoSection />
+							<PersonalInfoSection register={register} errors={errors} />
 						</FormSection>
 
 						<FormSection title='Professional Information'>
-							<ProfessionalInfoSection />
+							<ProfessionalInfoSection register={register} errors={errors} />
 						</FormSection>
 
 						<FormSection title='Additional Questions'>
-							<AdditionalQuestionsSection />
+							<AdditionalQuestionsSection register={register} errors={errors} />
 						</FormSection>
 
 						<Card className='transition-all duration-300 hover:shadow-md'>
