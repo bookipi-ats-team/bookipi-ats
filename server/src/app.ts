@@ -6,6 +6,7 @@ import applicantRoutes from "./routes/applicants.js";
 import applicationRoutes from "./routes/applications.js";
 import jobRoutes from "./routes/jobs.js";
 import aiRoutes from "./routes/ai.js";
+import filesRoutes from "./routes/files.js";
 
 const app = express();
 
@@ -23,6 +24,7 @@ apiRouter.use("/applicants", applicantRoutes);
 apiRouter.use("/", applicationRoutes);
 apiRouter.use("/jobs", jobRoutes);
 apiRouter.use("/ai", aiRoutes);
+apiRouter.use("/files", filesRoutes);
 
 app.use("/api/v1", apiRouter);
 
