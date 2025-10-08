@@ -17,7 +17,8 @@ If you are developing a production application, we recommend updating the config
 
 # Bookipi ATS - Business Owner Portal
 
-A modern Applicant Tracking System (ATS) frontend for business owners
+A modern Applicant Tracking System (ATS) frontend for business owners, built for a 2-day hackathon.
+
 ## 🚀 Features
 
 - **Business Onboarding** - Quick setup with query parameter prefill support

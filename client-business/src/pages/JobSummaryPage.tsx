@@ -85,6 +85,12 @@ export const JobSummaryPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => navigate(`/jobs/${jobId}/edit`)}
+              >
+                Edit Job
+              </Button>
               {job.status === 'DRAFT' && (
                 <Button
                   onClick={() => handleAction('publish')}

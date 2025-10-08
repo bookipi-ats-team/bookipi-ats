@@ -5,6 +5,7 @@ import { Layout } from './components/Layout';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { JobsPage } from './pages/JobsPage';
 import { NewJobPage } from './pages/NewJobPage';
+import { EditJobPage } from './pages/EditJobPage';
 import { JobSummaryPage } from './pages/JobSummaryPage';
 import { PipelinePage } from './pages/PipelinePage';
 
@@ -29,6 +30,7 @@ function App() {
             <Route path="jobs" element={<JobsPage />} />
             <Route path="jobs/new" element={<NewJobPage />} />
             <Route path="jobs/:jobId" element={<JobSummaryPage />} />
+            <Route path="jobs/:jobId/edit" element={<EditJobPage />} />
             <Route path="jobs/:jobId/pipeline" element={<PipelinePage />} />
           </Route>
         </Routes>
