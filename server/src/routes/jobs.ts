@@ -4,6 +4,7 @@ import {
   getJobById,
   publishJob,
   pauseJob,
+  closeJob,
 } from "../controllers/jobs.controller.js";
 import { validateRequest } from "../middleware/validateRequest.js";
 import { createJobBodySchema, jobIdParamsSchema } from "../validation/jobs.js";
@@ -25,6 +26,11 @@ router.post(
   "/:id/pause",
   validateRequest({ params: jobIdParamsSchema }),
   pauseJob,
+);
+router.post(
+  "/:id/close",
+  validateRequest({ params: jobIdParamsSchema }),
+  closeJob,
 );
 
 export default router;
