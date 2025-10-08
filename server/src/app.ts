@@ -4,6 +4,7 @@ import helmet from "helmet";
 import businessRoutes from "./routes/business.js";
 import applicantRoutes from "./routes/applicants.js";
 import applicationRoutes from "./routes/applications.js";
+import jobRoutes from "./routes/jobs.js";
 
 const app = express();
 
@@ -19,6 +20,7 @@ const apiRouter = Router();
 apiRouter.use("/business", businessRoutes);
 apiRouter.use("/applicants", applicantRoutes);
 apiRouter.use("/", applicationRoutes);
+apiRouter.use("/jobs", jobRoutes);
 
 app.use("/api/v1", apiRouter);
 

@@ -15,7 +15,7 @@ export interface IJob extends Document {
   description: string;
   mustHaves: string[];
   location?: string;
-  employmentType?: EmploymentType;
+  employmentType: EmploymentType;
   industry?: string;
   status: JobStatus;
   createdAt: Date;
@@ -51,6 +51,7 @@ const jobSchema = new Schema<IJob>(
     employmentType: {
       type: String,
       enum: ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERN", "TEMPORARY"],
+      required: true,
     },
     industry: {
       type: String,
