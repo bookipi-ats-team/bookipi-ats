@@ -85,6 +85,9 @@ export const publishJob: RequestHandler = async (req, res) => {
     }
 
     job.status = "PUBLISHED";
+    if (!job.publishedAt) {
+      job.publishedAt = new Date();
+    }
     await job.save();
 
     res.status(200).json({ status: job.status });

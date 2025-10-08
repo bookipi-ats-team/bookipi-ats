@@ -18,6 +18,7 @@ export interface IJob extends Document {
   employmentType: EmploymentType;
   industry?: string;
   status: JobStatus;
+  publishedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -62,6 +63,9 @@ const jobSchema = new Schema<IJob>(
       enum: ["DRAFT", "PUBLISHED", "PAUSED", "CLOSED"],
       default: "DRAFT",
       index: true,
+    },
+    publishedAt: {
+      type: Date,
     },
   },
   {

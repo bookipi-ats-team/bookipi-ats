@@ -131,6 +131,7 @@ type Job = {
   employmentType?: EmploymentType;
   industry?: string;
   status: 'DRAFT' | 'PUBLISHED' | 'PAUSED' | 'CLOSED';
+  publishedAt?: string;
   createdAt: string;
   updatedAt: string;
 };
