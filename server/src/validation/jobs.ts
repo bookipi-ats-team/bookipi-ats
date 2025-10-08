@@ -42,3 +42,22 @@ export const jobIdParamsSchema = z.object({
 });
 
 export type JobIdParams = z.infer<typeof jobIdParamsSchema>;
+
+export const updateJobBodySchema = z
+  .object({
+    title: optionalString,
+    description: optionalString,
+    mustHaves: z
+      .array(z.string().trim())
+      .transform((arr) => arr.filter((item) => item.length > 0))
+      .optional(),
+    location: optionalString,
+    employmentType: employmentTypeEnum.optional(),
+    industry: optionalString,
+    status: jobStatusEnum.optional(),
+  })
+  .refine((data) => Object.values(data).some((value) => value !== undefined), {
+    message: "At least one field must be provided",
+  });
+
+export type UpdateJobBody = z.infer<typeof updateJobBodySchema>;

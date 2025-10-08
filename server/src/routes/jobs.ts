@@ -5,9 +5,14 @@ import {
   publishJob,
   pauseJob,
   closeJob,
+  updateJob,
 } from "../controllers/jobs.controller.js";
 import { validateRequest } from "../middleware/validateRequest.js";
-import { createJobBodySchema, jobIdParamsSchema } from "../validation/jobs.js";
+import {
+  createJobBodySchema,
+  jobIdParamsSchema,
+  updateJobBodySchema,
+} from "../validation/jobs.js";
 
 const router = Router();
 
@@ -16,6 +21,14 @@ router.get(
   "/:id",
   validateRequest({ params: jobIdParamsSchema }),
   getJobById,
+);
+router.patch(
+  "/:id",
+  validateRequest({
+    params: jobIdParamsSchema,
+    body: updateJobBodySchema,
+  }),
+  updateJob,
 );
 router.post(
   "/:id/publish",
