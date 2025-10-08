@@ -7,6 +7,7 @@ import applicationRoutes from "./routes/applications.js";
 import jobRoutes from "./routes/jobs.js";
 import aiRoutes from "./routes/ai.js";
 import filesRoutes from "./routes/files.js";
+import publicRoutes from "./routes/public.js";
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 
 const apiRouter = Router();
 
+apiRouter.use("/public", publicRoutes);
 apiRouter.use("/business", businessRoutes);
 apiRouter.use("/applicants", applicantRoutes);
 apiRouter.use("/", applicationRoutes);
