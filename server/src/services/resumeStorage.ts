@@ -2,17 +2,20 @@ import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import env from "../config/env.js";
+import {
+  deleteFileFromDrive,
+  uploadFileToDrive,
+} from "./googleDrive.js";
 
 const RESUME_UPLOAD_ROOT = path.resolve(process.cwd(), "uploads", "resumes");
 const TEMP_UPLOAD_DIR = path.join(RESUME_UPLOAD_ROOT, "tmp");
-const FINAL_UPLOAD_DIR = path.join(RESUME_UPLOAD_ROOT, "files");
 
 const ensureDir = async (dirPath: string) => {
   await fs.mkdir(dirPath, { recursive: true });
 };
 
 export const ensureResumeUploadBaseDir = async () => {
-  await Promise.all([ensureDir(TEMP_UPLOAD_DIR), ensureDir(FINAL_UPLOAD_DIR)]);
+  await ensureDir(TEMP_UPLOAD_DIR);
 };
 
 const sanitizeFileName = (name: string) => {
@@ -58,6 +61,7 @@ export const createSignedResumeUpload = async (
 export interface FinalizeResumeUploadOptions {
   fileId: string;
   originalName: string;
+  mimeType: string;
 }
 
 export interface FinalizeResumeUploadResult {
@@ -67,10 +71,15 @@ export interface FinalizeResumeUploadResult {
 }
 
 export const finalizeResumeUpload = async (
-  { fileId, originalName }: FinalizeResumeUploadOptions,
-  staticRouteBase = "/static/resumes",
+  { fileId, originalName, mimeType }: FinalizeResumeUploadOptions,
 ): Promise<FinalizeResumeUploadResult> => {
   await ensureResumeUploadBaseDir();
+
+  const driveFolderId = env.googleDriveFolderId;
+
+  if (!driveFolderId) {
+    throw new Error("Google Drive folder ID is not configured");
+  }
 
   const tempFilePath = path.join(TEMP_UPLOAD_DIR, fileId);
   const tempStat = await fs.stat(tempFilePath).catch(() => undefined);
@@ -85,28 +94,34 @@ export const finalizeResumeUpload = async (
   }
 
   const sanitizedName = sanitizeFileName(originalName);
-  const finalDir = path.join(FINAL_UPLOAD_DIR, fileId);
-  await ensureDir(finalDir);
+  const fileBuffer = await fs.readFile(tempFilePath);
 
-  const destinationPath = path.join(finalDir, sanitizedName);
-
-  await fs.rename(tempFilePath, destinationPath).catch(async (error) => {
-    if (error && "code" in error && error.code === "EXDEV") {
-      const data = await fs.readFile(tempFilePath);
-      await fs.writeFile(destinationPath, data);
-      await fs.rm(tempFilePath, { force: true });
-      return;
-    }
-
-    throw error;
+  const driveResult = await uploadFileToDrive({
+    name: sanitizedName,
+    data: fileBuffer,
+    mimeType,
+    parents: [driveFolderId],
   });
 
-  const relativePath = path.relative(RESUME_UPLOAD_ROOT, destinationPath);
+  await fs.rm(tempFilePath, { force: true });
+
+  const shareableUrl = driveResult.webViewLink ?? driveResult.webContentLink;
+
+  if (!shareableUrl) {
+    await deleteFileFromDrive(driveResult.fileId).catch((error) => {
+      if (error instanceof Error) {
+        // eslint-disable-next-line no-console
+        console.warn("Failed to clean up Google Drive file", error);
+      }
+    });
+
+    throw new Error("Unable to create a shareable Google Drive link");
+  }
 
   return {
-    storagePath: relativePath,
-    url: `${staticRouteBase}/${fileId}/${encodeURIComponent(sanitizedName)}`,
-    sizeBytes: tempStat.size,
+    storagePath: driveResult.fileId,
+    url: shareableUrl,
+    sizeBytes: driveResult.sizeBytes,
   };
 };
 
@@ -132,6 +147,6 @@ export const removeTempResumeUpload = async (fileId: string) => {
   await fs.rm(tempFilePath, { force: true });
 };
 
-export const getFinalResumeAbsolutePath = (storagePath: string) => {
-  return path.join(RESUME_UPLOAD_ROOT, storagePath);
+export const deleteFinalResumeUpload = async (storagePath: string) => {
+  await deleteFileFromDrive(storagePath);
 };

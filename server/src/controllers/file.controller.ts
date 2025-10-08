@@ -1,13 +1,12 @@
 import type { RequestHandler } from "express";
-import fs from "node:fs/promises";
 import { Types } from "mongoose";
 import { Applicant } from "../models/Applicant.js";
 import { Job } from "../models/Job.js";
 import { ResumeFile } from "../models/ResumeFile.js";
 import {
   createSignedResumeUpload,
+  deleteFinalResumeUpload,
   finalizeResumeUpload,
-  getFinalResumeAbsolutePath,
   removeTempResumeUpload,
   writeTempResumeUpload,
 } from "../services/resumeStorage.js";
@@ -122,13 +121,21 @@ export const confirmResumeUpload: RequestHandler = async (req, res) => {
 
     const { applicantRecord, jobRecord } = entityCheck;
 
-    const finalizeResult = await finalizeResumeUpload({ fileId, originalName });
+    const finalizeResult = await finalizeResumeUpload({
+      fileId,
+      originalName,
+      mimeType,
+    });
 
     if (finalizeResult.sizeBytes !== sizeBytes) {
-      const absolutePath = getFinalResumeAbsolutePath(
-        finalizeResult.storagePath,
-      );
-      await fs.rm(absolutePath, { force: true });
+      try {
+        await deleteFinalResumeUpload(finalizeResult.storagePath);
+      } catch (cleanupError) {
+        if (cleanupError instanceof Error) {
+          // eslint-disable-next-line no-console
+          console.warn("Failed to clean up Drive-backed resume upload", cleanupError);
+        }
+      }
       res.status(400).json({ error: "Resume file size mismatch" });
       return;
     }

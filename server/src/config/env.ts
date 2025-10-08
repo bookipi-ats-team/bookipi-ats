@@ -27,6 +27,9 @@ const env = {
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ],
   ),
+  googleDriveCredentialsPath: process.env.GOOGLE_DRIVE_CREDENTIALS_PATH,
+  googleDriveFolderId: process.env.GOOGLE_DRIVE_FOLDER_ID,
+  googleDriveImpersonatedUser: process.env.GOOGLE_DRIVE_IMPERSONATED_USER,
 } as const;
 
 export default env;
