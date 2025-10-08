@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import businessRoutes from "./routes/business.js";
 import applicantRoutes from "./routes/applicants.js";
+import applicationRoutes from "./routes/applications.js";
 
 const app = express();
 
@@ -17,6 +18,7 @@ const apiRouter = Router();
 
 apiRouter.use("/business", businessRoutes);
 apiRouter.use("/applicants", applicantRoutes);
+apiRouter.use("/", applicationRoutes);
 
 app.use("/api/v1", apiRouter);
 
