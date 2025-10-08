@@ -16,6 +16,8 @@ const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   port: parsePort(process.env.PORT),
   mongoUri: process.env.MONGODB_URI,
+  openAiApiKey: process.env.OPENAI_API_KEY,
+  model: process.env.MODEL || "gpt-4o-mini",
   maxResumeFileSize:
     Number(process.env.MAX_RESUME_FILE_SIZE) || 15 * 1024 * 1024,
   allowedResumeMimeTypes: new Set(

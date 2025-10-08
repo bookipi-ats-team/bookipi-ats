@@ -17,6 +17,7 @@ Environment variables:
 - `PORT` (default `3000`)
 - `NODE_ENV` (default `development`)
 - `MONGODB_URI` (optional) – MongoDB connection string; if omitted, the server boots without a database connection and logs a warning
+- `OPENAI_API_KEY` (optional) – enables AI-backed suggestions; when missing, all AI endpoints return deterministic static fallbacks
 
 Create a `.env` file if you need to override defaults. The server logs the active port and environment on boot.
 
@@ -95,11 +96,18 @@ Create a `.env` file if you need to override defaults. The server logs the activ
 - `POST /files/resume/sign` body `{ mimeType, sizeBytes }` → `200 OK { uploadUrl, fileId }`
 - `POST /files/resume/confirm` body `{ fileId, applicantId?, jobId?, originalName, mimeType, sizeBytes }` → `200 OK ResumeFile` (triggers async parsing/scoring)
 
-### AI Services (Stubbed for MVP)
+### AI Services
 - `POST /ai/suggest-job-titles` body `{ businessId?, industry?, description? }` → `200 OK { items: string[], source: "AI" | "STATIC" }`
-- `POST /ai/suggest-must-haves` body `{ jobTitle, industry?, seniority? }` → `200 OK { items: string[], source }`
-- `POST /ai/generate-jd` body `{ jobTitle, mustHaves[], business: { name, description?, industry? }, extras? }` → `200 OK { text }`
+- `POST /ai/suggest-must-haves` body `{ jobTitle, industry?, seniority? }` → `200 OK { items: string[], source: "AI" | "STATIC" }`
+- `POST /ai/generate-jd` body `{ jobTitle, mustHaves[], business: { name, description?, industry? }, extras? }` → `200 OK { text, source: "AI" | "STATIC" }`
 - `POST /ai/score-resume` body `{ applicationId | { resumeFileId, job: { title, mustHaves[], description } } }` → `200 OK { score, cvScore, cvTips: string[] }`
+
+When `OPENAI_API_KEY` is present the service invokes OpenAI's `gpt-4o-mini` for contextual responses; otherwise deterministic fallbacks are returned with `source: "STATIC"`. Append `?mode=static` to any AI endpoint to explicitly bypass the OpenAI call.
+
+#### AI Testing Notes
+- Without an API key the responses are deterministic and tagged `"STATIC"`.
+- Provide `OPENAI_API_KEY` to exercise live completions.
+- Include `?mode=static` when you want to skip the OpenAI call during smoke tests.
 
 ### Public (Applicant-Facing)
 - `GET /public/jobs?q=&location=&industry=&employmentType=&cursor=&limit=` → `200 OK { items: Job[], nextCursor? }` (only `PUBLISHED` jobs)
