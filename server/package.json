@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "debug": "tsx watch --inspect-brk src/index.ts",
     "start": "node --import tsx/esm src/index.ts",
     "lint": "eslint . --ext .ts"
   },
