@@ -1,10 +1,12 @@
-import type { Request, Response } from "express";
+import type { RequestHandler } from "express";
 import { Business } from "../models/Business.js";
+import type {
+  CreateBusinessBody,
+  UpdateBusinessBody,
+  UpdateBusinessParams,
+} from "../validation/business.js";
 
-export const getMyBusiness = async (
-  _req: Request,
-  res: Response
-): Promise<void> => {
+export const getMyBusiness: RequestHandler = async (_req, res) => {
   try {
     const business = await Business.findOne();
 
@@ -15,24 +17,14 @@ export const getMyBusiness = async (
 
     res.status(200).json(business);
   } catch (error) {
+    console.error("Failed to fetch business", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
 
-export const createBusiness = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const createBusiness: RequestHandler = async (req, res) => {
   try {
-    const { name, description, industry } = {
-      ...req.query,
-      ...req.body,
-    };
-
-    if (!name) {
-      res.status(400).json({ error: "Name is required" });
-      return;
-    }
+    const { name, description, industry } = req.body as CreateBusinessBody;
 
     const business = new Business({
       name,
@@ -44,17 +36,15 @@ export const createBusiness = async (
 
     res.status(200).json(business);
   } catch (error) {
+    console.error("Failed to create business", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
 
-export const updateBusiness = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const updateBusiness: RequestHandler = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, description, industry } = req.body;
+    const { id } = req.params as UpdateBusinessParams;
+    const { name, description, industry } = req.body as UpdateBusinessBody;
 
     const updateData: Record<string, unknown> = {};
 
@@ -82,6 +72,7 @@ export const updateBusiness = async (
 
     res.status(200).json(business);
   } catch (error) {
+    console.error("Failed to update business", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
