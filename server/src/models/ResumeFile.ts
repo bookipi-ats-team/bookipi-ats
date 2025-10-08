@@ -1,22 +1,31 @@
 import { Schema, model, type Document, type Types } from "mongoose";
 
 export interface IResumeFile extends Document {
-  applicantId: Types.ObjectId;
+  fileId: string;
+  applicantId?: Types.ObjectId;
   jobId?: Types.ObjectId;
   url: string;
   originalName: string;
   mimeType: string;
   sizeBytes: number;
+  storagePath: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const resumeFileSchema = new Schema<IResumeFile>(
   {
+    fileId: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+      trim: true,
+    },
     applicantId: {
       type: Schema.Types.ObjectId,
       ref: "Applicant",
-      required: true,
+      required: false,
       index: true,
     },
     jobId: {
@@ -44,6 +53,11 @@ const resumeFileSchema = new Schema<IResumeFile>(
       required: true,
       min: 0,
     },
+    storagePath: {
+      type: String,
+      required: true,
+      trim: true,
+    },
   },
   {
     timestamps: true,
@@ -57,5 +71,6 @@ const resumeFileSchema = new Schema<IResumeFile>(
 );
 
 resumeFileSchema.index({ applicantId: 1, createdAt: -1 });
+resumeFileSchema.index({ jobId: 1, createdAt: -1 });
 
 export const ResumeFile = model<IResumeFile>("ResumeFile", resumeFileSchema);
