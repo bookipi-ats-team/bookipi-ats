@@ -15,9 +15,14 @@ const buildSearchRegex = (value: string | undefined): RegExp | undefined => {
   return new RegExp(escaped, "i");
 };
 
-export const getApplicants: RequestHandler = async (req, res) => {
+export const getApplicants: RequestHandler<
+  unknown,
+  unknown,
+  unknown,
+  GetApplicantsQuery
+> = async (req, res) => {
   try {
-    const { businessId, q, cursor, limit } = req.query as unknown as GetApplicantsQuery;
+    const { businessId, q, cursor, limit } = req.query;
 
     const query = Applicant.find({
       ...(businessId ? { businessId: new Types.ObjectId(businessId) } : {}),

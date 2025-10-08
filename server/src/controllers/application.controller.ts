@@ -25,7 +25,9 @@ const buildCursorFilter = (cursor?: string) => {
   return { _id: { $gt: new Types.ObjectId(cursor) } };
 };
 
-const normalizeOptionalField = (value: string | undefined): string | undefined => {
+const normalizeOptionalField = (
+  value: string | undefined,
+): string | undefined => {
   if (value === undefined) {
     return undefined;
   }
@@ -34,10 +36,15 @@ const normalizeOptionalField = (value: string | undefined): string | undefined =
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
-export const getJobApplications: RequestHandler = async (req, res) => {
+export const getJobApplications: RequestHandler<
+  GetJobApplicationsParams,
+  unknown,
+  unknown,
+  GetJobApplicationsQuery
+> = async (req, res) => {
   try {
-    const { jobId } = req.params as GetJobApplicationsParams;
-    const { stage, cursor, limit } = req.query as unknown as GetJobApplicationsQuery;
+    const { jobId } = req.params;
+    const { stage, cursor, limit } = req.query;
 
     const jobExists = await Job.exists({ _id: jobId }).exec();
 
@@ -165,8 +172,11 @@ const findOrCreateApplicant = async (
 
 export const createApplication: RequestHandler = async (req, res) => {
   try {
-    const { jobId, applicant: applicantPayload, resumeFileId } =
-      req.body as CreateApplicationBody;
+    const {
+      jobId,
+      applicant: applicantPayload,
+      resumeFileId,
+    } = req.body as CreateApplicationBody;
 
     const job = await Job.findById(jobId).exec();
 
@@ -177,7 +187,10 @@ export const createApplication: RequestHandler = async (req, res) => {
 
     const jobBusinessId = new Types.ObjectId(job.businessId.toString());
 
-    const applicantResult = await findOrCreateApplicant(jobBusinessId, applicantPayload);
+    const applicantResult = await findOrCreateApplicant(
+      jobBusinessId,
+      applicantPayload,
+    );
 
     if ("error" in applicantResult) {
       res.status(400).json({ error: applicantResult.error });
@@ -190,7 +203,9 @@ export const createApplication: RequestHandler = async (req, res) => {
 
     if (resumeFileId) {
       resumeObjectId = new Types.ObjectId(resumeFileId);
-      const resumeExists = await ResumeFile.exists({ _id: resumeObjectId }).exec();
+      const resumeExists = await ResumeFile.exists({
+        _id: resumeObjectId,
+      }).exec();
 
       if (!resumeExists) {
         res.status(404).json({ error: "Resume file not found" });
@@ -292,7 +307,9 @@ export const getApplicationNotes: RequestHandler = async (req, res) => {
       return;
     }
 
-    const notes = await Note.find({ applicationId: id }).sort({ createdAt: -1 }).exec();
+    const notes = await Note.find({ applicationId: id })
+      .sort({ createdAt: -1 })
+      .exec();
 
     res.status(200).json(notes);
   } catch (error) {

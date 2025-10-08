@@ -204,10 +204,23 @@ export const updateJob: RequestHandler = async (req, res) => {
   }
 };
 
-export const getJobs: RequestHandler = async (req, res) => {
+export const getJobs: RequestHandler<
+  unknown,
+  unknown,
+  unknown,
+  GetJobsQuery
+> = async (req, res) => {
   try {
-    const { businessId, status, q, location, industry, employmentType, cursor, limit } =
-      req.query as unknown as GetJobsQuery;
+    const {
+      businessId,
+      status,
+      q,
+      location,
+      industry,
+      employmentType,
+      cursor,
+      limit,
+    } = req.query;
 
     const filter: Record<string, unknown> = {};
 
@@ -242,13 +255,15 @@ export const getJobs: RequestHandler = async (req, res) => {
       filter._id = { $gt: cursor };
     }
 
+    const limitNumber = Number(limit ?? 20);
+
     const jobs: IJob[] = await Job.find(filter)
       .sort({ _id: 1 })
-      .limit(limit + 1);
+      .limit(limitNumber + 1);
 
-    const hasMore = jobs.length > limit;
-    const items: IJob[] = hasMore ? jobs.slice(0, limit) : jobs;
-    const nextCursor = hasMore ? items[items.length - 1]._id.toString() : undefined;
+    const hasMore = jobs.length > limitNumber;
+    const items: IJob[] = hasMore ? jobs.slice(0, limitNumber) : jobs;
+    const nextCursor = hasMore ? items[items.length - 1].id : undefined;
 
     res.status(200).json({
       items,

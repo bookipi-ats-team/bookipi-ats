@@ -19,7 +19,10 @@ const formatIssues = (error: ZodError): ValidationIssue[] =>
     message: issue.message,
   }));
 
-export const validateRequest = (schemas: ValidationSchemas): RequestHandler =>
+export const validateRequest =
+  (
+    schemas: ValidationSchemas,
+  ): RequestHandler<unknown, unknown, unknown, unknown> =>
   (req, res, next) => {
     try {
       if (schemas.body) {
