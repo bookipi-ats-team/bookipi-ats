@@ -1,1 +1,179 @@
-# Bookipi ATS — Server
+# Bookipi ATS Backend
+
+Backend service for the Bookipi Applicant Tracking System (ATS) MVP. This README captures the product scope relevant to the backend, the API surface area to be delivered, and practical notes for running the service locally.
+
+## Tech Stack
+- Node.js + TypeScript
+- Express with RESTful routes under `/api/v1`
+- Helmet & CORS middleware
+
+## Getting Started
+- Install dependencies: `npm install`
+- Run in watch mode: `npm run dev`
+- Start in production mode: `npm start`
+- Lint: `npm run lint`
+
+Environment variables:
+- `PORT` (default `3000`)
+- `NODE_ENV` (default `development`)
+
+Create a `.env` file if you need to override defaults. The server logs the active port and environment on boot.
+
+## MVP Scope & Principles
+
+**Core personas**
+- Business Owner (internal admin)
+- Applicant (external)
+
+**Primary surfaces**
+- Owner onboarding: capture business profile (name, description, industry) with optional query-string prefill.
+- Jobs dashboard: list, filter, manage, and publish/pause/close jobs.
+- AI-assisted job creation: title suggestions, must-have suggestions, auto-generated job description.
+- Applicant pipeline: kanban board with drag/drop stage changes, notes, and applicant detail view.
+- Applicant portal: browse jobs with filters, view details, apply with resume, view application status list.
+
+**AI features included in MVP**
+- Job title suggestions
+- Must-have requirement suggestions
+- Auto-generated job descriptions
+- Resume-to-job match scoring
+- Applicant CV quality score and improvement tips
+
+**Out of scope (post-MVP)**
+- External job board distribution (LinkedIn, Seek, Glassdoor, etc.)
+- Interview scheduling or offer workflows
+- Automated email sequences
+- Calendar scheduling integration
+- Multi-tenant organisations beyond a single business owner
+
+## API Overview
+
+- Base path: `/api/v1`
+- Authentication: Bearer JWT required for authenticated routes; `/public/*` endpoints remain unauthenticated.
+- Standard error envelope:
+  ```json
+  {
+    "error": {
+      "code": "STRING_CODE",
+      "message": "Human-readable",
+      "field": "optional"
+    }
+  }
+  ```
+
+### Auth
+- `GET /auth/me` → `200 OK` `{ id, email, name, role, businessId? }`
+
+### Business (Owner Onboarding)
+- `GET /business/my` → `200 OK Business` or `404 Not Found`
+- `POST /business` body `{ name, description?, industry? }` → `200 OK Business` (support query prefill via `?name=&description=&industry=`)
+- `PATCH /business/:id` body `{ name?, description?, industry? }` → `200 OK Business`
+
+### Jobs
+- `GET /jobs?businessId=&status=&q=&location=&industry=&cursor=&limit=` → `200 OK { items: Job[], nextCursor? }`
+- `POST /jobs` body `{ businessId, title, description, mustHaves[], location?, employmentType?, industry? }` → `200 OK Job`
+- `GET /jobs/:id` → `200 OK Job`
+- `PATCH /jobs/:id` body `{ title?, description?, mustHaves?, location?, employmentType?, industry?, status? }` → `200 OK Job`
+- `POST /jobs/:id/publish` → `200 OK { status: "PUBLISHED" }`
+- `POST /jobs/:id/pause` → `200 OK { status: "PAUSED" }`
+- `POST /jobs/:id/close` → `200 OK { status: "CLOSED" }`
+
+### Applicants (Internal)
+- `GET /applicants?businessId=&q=&cursor=&limit=` → `200 OK { items: Applicant[], nextCursor? }`
+- `GET /applicants/:id` → `200 OK Applicant`
+
+### Applications & Pipeline
+- `GET /jobs/:jobId/applications?stage=&cursor=&limit=` → `200 OK { items: (Application & { applicant: Applicant })[], nextCursor? }`
+- `GET /applications/:id` → `200 OK Application & { applicant, job, resumeFile? }`
+- `POST /applications` body `{ jobId, applicant: { id? | email, name, phone?, location? }, resumeFileId? }` → `200 OK Application`
+- `PATCH /applications/:id` body `{ stage? }` → `200 OK Application` (supports drag-and-drop stage updates)
+- `POST /applications/:id/notes` body `{ body }` → `200 OK Note`
+- `GET /applications/:id/notes` → `200 OK Note[]`
+
+### Files (Resumes)
+- `POST /files/resume/sign` body `{ mimeType, sizeBytes }` → `200 OK { uploadUrl, fileId }`
+- `POST /files/resume/confirm` body `{ fileId, applicantId?, jobId?, originalName, mimeType, sizeBytes }` → `200 OK ResumeFile` (triggers async parsing/scoring)
+
+### AI Services (Stubbed for MVP)
+- `POST /ai/suggest-job-titles` body `{ businessId?, industry?, description? }` → `200 OK { items: string[], source: "AI" | "STATIC" }`
+- `POST /ai/suggest-must-haves` body `{ jobTitle, industry?, seniority? }` → `200 OK { items: string[], source }`
+- `POST /ai/generate-jd` body `{ jobTitle, mustHaves[], business: { name, description?, industry? }, extras? }` → `200 OK { text }`
+- `POST /ai/score-resume` body `{ applicationId | { resumeFileId, job: { title, mustHaves[], description } } }` → `200 OK { score, cvScore, cvTips: string[] }`
+
+### Public (Applicant-Facing)
+- `GET /public/jobs?q=&location=&industry=&employmentType=&cursor=&limit=` → `200 OK { items: Job[], nextCursor? }` (only `PUBLISHED` jobs)
+- `GET /public/jobs/:jobId` → `200 OK Job`
+- `POST /public/apply` body `{ jobId, applicant: { email, name, phone?, location? }, resumeFileId }` → `200 OK Application` (`stage=NEW`)
+- `GET /public/applications/:email` → `200 OK { items: (Application & { job: Job })[] }`
+
+## Core Data Shapes
+
+```ts
+type EmploymentType = 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERN' | 'TEMPORARY';
+type StageCode = 'NEW' | 'SCREEN' | 'INTERVIEW' | 'OFFER' | 'HIRED' | 'REJECTED';
+
+type Job = {
+  id: string;
+  businessId: string;
+  title: string;
+  description: string;
+  mustHaves: string[];
+  location?: string;
+  employmentType?: EmploymentType;
+  industry?: string;
+  status: 'DRAFT' | 'PUBLISHED' | 'PAUSED' | 'CLOSED';
+  createdAt: string;
+  updatedAt: string;
+};
+
+type Applicant = {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string;
+  location?: string;
+  createdAt: string;
+};
+
+type Application = {
+  id: string;
+  applicantId: string;
+  jobId: string;
+  businessId: string;
+  stage: StageCode;
+  score?: number;
+  cvScore?: number;
+  cvTips?: string[];
+  notesCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type Note = {
+  id: string;
+  applicationId: string;
+  authorId: string;
+  body: string;
+  createdAt: string;
+};
+
+type ResumeFile = {
+  id: string;
+  applicantId: string;
+  jobId?: string;
+  url: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: string;
+};
+```
+
+## Acceptance Checklist (Backend ↔ Frontend)
+- `POST /business` respects query prefill and completes onboarding flow.
+- `POST /jobs` followed by `/jobs/:id/publish` makes the job visible via `/public/jobs`.
+- Applicant apply flow (`sign → upload → confirm → /public/apply`) creates an `Application` in `NEW` stage.
+- `/jobs/:jobId/applications` supports grouped listings; `PATCH /applications/:id` updates stages persistently.
+- `POST /applications/:id/notes` increments `notesCount`.
+- AI endpoints return usable data for chips, must-haves, and job description text.
+
