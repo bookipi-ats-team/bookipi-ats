@@ -1,6 +1,19 @@
-import type { RequestHandler } from "express";
-import { Job } from "../models/Job.js";
+import type { RequestHandler, Response } from "express";
+import { Job, type IJob } from "../models/Job.js";
 import type { CreateJobBody, JobIdParams } from "../validation/jobs.js";
+
+const findJobByIdOrRespond404 = async (
+  id: string,
+  res: Response,
+): Promise<IJob | null> => {
+  const job = await Job.findById(id);
+  if (!job) {
+    res.status(404).json({ error: "Job not found" });
+    return null;
+  }
+
+  return job;
+};
 
 export const createJob: RequestHandler = async (req, res) => {
   try {
@@ -38,16 +51,34 @@ export const getJobById: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params as JobIdParams;
 
-    const job = await Job.findById(id);
-
+    const job = await findJobByIdOrRespond404(id, res);
     if (!job) {
-      res.status(404).json({ error: "Job not found" });
       return;
     }
 
     res.status(200).json(job);
   } catch (error) {
     console.error("Failed to fetch job", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const publishJob: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params as JobIdParams;
+
+    const job = await findJobByIdOrRespond404(id, res);
+
+    if (!job) {
+      return;
+    }
+
+    job.status = "PUBLISHED";
+    await job.save();
+
+    res.status(200).json({ status: job.status });
+  } catch (error) {
+    console.error("Failed to publish job", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
