@@ -36,3 +36,9 @@ export const createJobBodySchema = z.object({
 });
 
 export type CreateJobBody = z.infer<typeof createJobBodySchema>;
+
+export const jobIdParamsSchema = z.object({
+  id: objectIdString,
+});
+
+export type JobIdParams = z.infer<typeof jobIdParamsSchema>;
