@@ -18,8 +18,8 @@ import {
 
 const router = Router();
 
-router.get("/", validateRequest({ query: getJobsQuerySchema }), getJobs);
 router.post("/", validateRequest({ body: createJobBodySchema }), createJob);
+router.get("/", validateRequest({ query: getJobsQuerySchema }), getJobs);
 router.get(
   "/:id",
   validateRequest({ params: jobIdParamsSchema }),
