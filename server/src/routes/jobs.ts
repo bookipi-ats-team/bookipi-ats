@@ -6,16 +6,19 @@ import {
   pauseJob,
   closeJob,
   updateJob,
+  getJobs,
 } from "../controllers/jobs.controller.js";
 import { validateRequest } from "../middleware/validateRequest.js";
 import {
   createJobBodySchema,
   jobIdParamsSchema,
   updateJobBodySchema,
+  getJobsQuerySchema,
 } from "../validation/jobs.js";
 
 const router = Router();
 
+router.get("/", validateRequest({ query: getJobsQuerySchema }), getJobs);
 router.post("/", validateRequest({ body: createJobBodySchema }), createJob);
 router.get(
   "/:id",

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { objectIdString, singleStringValue } from "./common.js";
+import { objectIdString, optionalObjectIdString, singleStringValue } from "./common.js";
 
 const employmentTypeEnum = z.enum([
   "FULL_TIME",
@@ -61,3 +61,22 @@ export const updateJobBodySchema = z
   });
 
 export type UpdateJobBody = z.infer<typeof updateJobBodySchema>;
+
+export const getJobsQuerySchema = z.object({
+  businessId: optionalObjectIdString,
+  status: jobStatusEnum.optional(),
+  q: optionalString,
+  location: optionalString,
+  industry: optionalString,
+  employmentType: employmentTypeEnum.optional(),
+  cursor: optionalString,
+  limit: singleStringValue
+    .transform((value) => {
+      if (value === undefined) return 20;
+      const parsed = Number.parseInt(value, 10);
+      return Number.isNaN(parsed) ? 20 : parsed;
+    })
+    .pipe(z.number().min(1).max(100)),
+});
+
+export type GetJobsQuery = z.infer<typeof getJobsQuerySchema>;

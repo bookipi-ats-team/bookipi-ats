@@ -5,6 +5,7 @@ import type {
   CreateJobBody,
   JobIdParams,
   UpdateJobBody,
+  GetJobsQuery,
 } from "../validation/jobs.js";
 
 const findJobByIdOrRespond404 = async (
@@ -187,6 +188,62 @@ export const updateJob: RequestHandler = async (req, res) => {
     res.status(200).json(job);
   } catch (error) {
     console.error("Failed to update job", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getJobs: RequestHandler = async (req, res) => {
+  try {
+    const { businessId, status, q, location, industry, employmentType, cursor, limit } =
+      req.query as unknown as GetJobsQuery;
+
+    const filter: Record<string, unknown> = {};
+
+    if (businessId) {
+      filter.businessId = businessId;
+    }
+
+    if (status) {
+      filter.status = status;
+    }
+
+    if (q) {
+      filter.$or = [
+        { title: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } },
+      ];
+    }
+
+    if (location) {
+      filter.location = { $regex: location, $options: "i" };
+    }
+
+    if (industry) {
+      filter.industry = { $regex: industry, $options: "i" };
+    }
+
+    if (employmentType) {
+      filter.employmentType = employmentType;
+    }
+
+    if (cursor) {
+      filter._id = { $gt: cursor };
+    }
+
+    const jobs: IJob[] = await Job.find(filter)
+      .sort({ _id: 1 })
+      .limit(limit + 1);
+
+    const hasMore = jobs.length > limit;
+    const items: IJob[] = hasMore ? jobs.slice(0, limit) : jobs;
+    const nextCursor = hasMore ? items[items.length - 1]._id.toString() : undefined;
+
+    res.status(200).json({
+      items,
+      nextCursor,
+    });
+  } catch (error) {
+    console.error("Failed to fetch jobs", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
