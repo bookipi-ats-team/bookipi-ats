@@ -1,5 +1,6 @@
 import type { RequestHandler, Response } from "express";
 import { Job, type IJob } from "../models/Job.js";
+import { Business } from "../models/Business.js";
 import type {
   CreateJobBody,
   JobIdParams,
@@ -30,6 +31,12 @@ export const createJob: RequestHandler = async (req, res) => {
       employmentType,
       industry,
     } = req.body as CreateJobBody;
+
+    const businessExists = await Business.findById(businessId);
+    if (!businessExists) {
+      res.status(404).json({ error: "Business not found" });
+      return;
+    }
 
     const job = new Job({
       businessId,
