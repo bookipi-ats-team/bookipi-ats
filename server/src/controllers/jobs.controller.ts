@@ -21,6 +21,12 @@ const findJobByIdOrRespond404 = async (
   return job;
 };
 
+const setPublishedAtIfNeeded = (job: IJob, newStatus: string): void => {
+  if (newStatus === "PUBLISHED" && !job.publishedAt) {
+    job.publishedAt = new Date();
+  }
+};
+
 export const createJob: RequestHandler = async (req, res) => {
   try {
     const {
@@ -85,9 +91,7 @@ export const publishJob: RequestHandler = async (req, res) => {
     }
 
     job.status = "PUBLISHED";
-    if (!job.publishedAt) {
-      job.publishedAt = new Date();
-    }
+    setPublishedAtIfNeeded(job, "PUBLISHED");
     await job.save();
 
     res.status(200).json({ status: job.status });
@@ -178,15 +182,20 @@ export const updateJob: RequestHandler = async (req, res) => {
       updateData.status = status;
     }
 
-    const job = await Job.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    });
+    const job = await Job.findById(id);
 
     if (!job) {
       res.status(404).json({ error: "Job not found" });
       return;
     }
+
+    Object.assign(job, updateData);
+
+    if (status !== undefined) {
+      setPublishedAtIfNeeded(job, status);
+    }
+
+    await job.save();
 
     res.status(200).json(job);
   } catch (error) {
