@@ -16,6 +16,7 @@ Backend service for the Bookipi Applicant Tracking System (ATS) MVP. This README
 Environment variables:
 - `PORT` (default `3000`)
 - `NODE_ENV` (default `development`)
+- `MONGODB_URI` (optional) – MongoDB connection string; if omitted, the server boots without a database connection and logs a warning
 
 Create a `.env` file if you need to override defaults. The server logs the active port and environment on boot.
 
@@ -176,4 +177,3 @@ type ResumeFile = {
 - `/jobs/:jobId/applications` supports grouped listings; `PATCH /applications/:id` updates stages persistently.
 - `POST /applications/:id/notes` increments `notesCount`.
 - AI endpoints return usable data for chips, must-haves, and job description text.
-
