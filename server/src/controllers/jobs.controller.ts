@@ -68,7 +68,6 @@ export const publishJob: RequestHandler = async (req, res) => {
     const { id } = req.params as JobIdParams;
 
     const job = await findJobByIdOrRespond404(id, res);
-
     if (!job) {
       return;
     }
@@ -79,6 +78,25 @@ export const publishJob: RequestHandler = async (req, res) => {
     res.status(200).json({ status: job.status });
   } catch (error) {
     console.error("Failed to publish job", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const pauseJob: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params as JobIdParams;
+
+    const job = await findJobByIdOrRespond404(id, res);
+    if (!job) {
+      return;
+    }
+
+    job.status = "PAUSED";
+    await job.save();
+
+    res.status(200).json({ status: job.status });
+  } catch (error) {
+    console.error("Failed to pause job", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
