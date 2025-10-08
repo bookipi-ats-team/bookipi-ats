@@ -73,9 +73,9 @@ Create a `.env` file if you need to override defaults. The server logs the activ
 
 ### Jobs
 - `GET /jobs?businessId=&status=&q=&location=&industry=&cursor=&limit=` → `200 OK { items: Job[], nextCursor? }`
-- `POST /jobs` body `{ businessId, title, description, mustHaves[], location?, employmentType?, industry? }` → `200 OK Job`
+- `POST /jobs` body `{ businessId, title, description, mustHaves[]?, location?, employmentType, industry? }` → `200 OK Job`
 - `GET /jobs/:id` → `200 OK Job`
-- `PATCH /jobs/:id` body `{ title?, description?, mustHaves?, location?, employmentType?, industry?, status? }` → `200 OK Job`
+- `PATCH /jobs/:id` body `{ title?, description?, mustHaves[]?, location?, employmentType, industry?, status? }` → `200 OK Job`
 - `POST /jobs/:id/publish` → `200 OK { status: "PUBLISHED" }`
 - `POST /jobs/:id/pause` → `200 OK { status: "PAUSED" }`
 - `POST /jobs/:id/close` → `200 OK { status: "CLOSED" }`
@@ -128,7 +128,7 @@ type Job = {
   description: string;
   mustHaves: string[];
   location?: string;
-  employmentType?: EmploymentType;
+  employmentType: EmploymentType;
   industry?: string;
   status: 'DRAFT' | 'PUBLISHED' | 'PAUSED' | 'CLOSED';
   publishedAt?: string;
