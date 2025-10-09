@@ -2,6 +2,7 @@ import type { RequestHandler } from "express";
 import { Types } from "mongoose";
 import { Applicant } from "../models/Applicant.js";
 import { Application } from "../models/Application.js";
+import { Business } from "../models/Business.js";
 import { Job, type IJob } from "../models/Job.js";
 import { ResumeFile } from "../models/ResumeFile.js";
 import type {
@@ -97,7 +98,9 @@ const findOrCreateApplicant = async (
 };
 
 const ensurePublishedJob = async (jobId: string): Promise<IJob | null> => {
-  const job = await Job.findOne({ _id: jobId, status: "PUBLISHED" }).exec();
+  const job = await Job.findOne({ _id: jobId, status: "PUBLISHED" })
+    .populate("businessId", "name description industry")
+    .exec();
 
   return job ?? null;
 };
@@ -114,6 +117,7 @@ export const getPublicJobs: RequestHandler<
     const limit = (query.limit as number | undefined) ?? 20;
 
     const jobs = await Job.find(filter)
+      .populate("businessId", "name description industry")
       .sort({ _id: 1 })
       .limit(limit + 1)
       .exec();
@@ -122,7 +126,41 @@ export const getPublicJobs: RequestHandler<
     const items = hasMore ? jobs.slice(0, limit) : jobs;
     const nextCursor = hasMore ? items[items.length - 1].id : undefined;
 
-    res.status(200).json(nextCursor ? { items, nextCursor } : { items });
+    // Check if there are previous items (when cursor is provided and we have items)
+    let previousCursor: string | undefined;
+    if (query.cursor && items.length > 0) {
+      // Check if there are items before the first item in current results
+      const beforeFilter = {
+        ...buildJobsFilter({ ...query, cursor: undefined }),
+        _id: { $lt: new Types.ObjectId(items[0].id) }
+      };
+
+      const hasPrevious = await Job.exists(beforeFilter).exec();
+      if (hasPrevious) {
+        previousCursor = items[0].id;
+      }
+    }
+
+    // Transform jobs to include business field
+    const transformedItems = items.map(job => {
+      const jobObj = job.toObject();
+      const businessData = job.businessId as any; // Populated business data
+      return {
+        ...jobObj,
+        businessId: job._id,
+        business: {
+          name: businessData.name,
+          description: businessData.description,
+          industry: businessData.industry
+        }
+      };
+    });
+
+    const response: any = { items: transformedItems };
+    if (nextCursor) response.nextCursor = nextCursor;
+    if (previousCursor) response.previousCursor = previousCursor;
+
+    res.status(200).json(response);
   } catch (error) {
     console.error("Failed to fetch public jobs", error);
     res.status(500).json({ error: "Internal server error" });
@@ -140,7 +178,20 @@ export const getPublicJobById: RequestHandler = async (req, res) => {
       return;
     }
 
-    res.status(200).json(job);
+    // Transform job to include business field
+    const jobObj = job.toObject();
+    const businessData = job.businessId as any; // Populated business data
+    const transformedJob = {
+      ...jobObj,
+      businessId: job._id,
+      business: {
+        name: businessData.name,
+        description: businessData.description,
+        industry: businessData.industry
+      }
+    };
+
+    res.status(200).json(transformedJob);
   } catch (error) {
     console.error("Failed to fetch public job", error);
     res.status(500).json({ error: "Internal server error" });
@@ -235,3 +286,4 @@ export const getPublicApplications: RequestHandler = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+

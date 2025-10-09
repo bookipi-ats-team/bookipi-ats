@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { JobApplicationFormData } from '@/schemas/job-application-schema';
+import env from '@/config/env';
 
 interface SubmitApplicationParams {
   jobId: string;
@@ -8,6 +9,14 @@ interface SubmitApplicationParams {
 
 // Mock API function - replace with actual API call later
 const submitJobApplication = async ({ jobId, data }: SubmitApplicationParams): Promise<{ success: boolean; applicationId: string }> => {
+  // TODO: Replace with actual API call when backend is ready
+  // const response = await fetch(`${env.API_URL}/jobs/${jobId}/applications`, {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify(data)
+  // });
+  // return response.json();
+
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1500));
 
