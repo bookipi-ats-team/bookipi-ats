@@ -42,9 +42,6 @@ COPY --from=builder --chown=express:nodejs /app/dist ./dist
 COPY --from=deps --chown=express:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=express:nodejs /app/package.json ./package.json
 
-# Copy credentials.json if it exists
-COPY --from=builder --chown=express:nodejs /app/credentials.json ./credentials.json
-
 # Switch to non-root user
 USER express
 
