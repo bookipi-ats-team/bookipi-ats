@@ -1,13 +1,13 @@
 import { useMutation } from '@tanstack/react-query';
 import env from '@/config/env';
 
-interface UploadResumeParams {
+export interface UploadResumeParams {
   file: File;
   jobId?: string;
   applicantId?: string;
 }
 
-interface UploadResumeResponse {
+export interface UploadResumeResponse {
   fileId: string;
   originalName: string;
   mimeType: string;
@@ -16,45 +16,66 @@ interface UploadResumeResponse {
   _id: string;
 }
 
-const uploadResume = async ({ file, jobId, applicantId }: UploadResumeParams): Promise<UploadResumeResponse> => {
-  // Build query parameters
-  const queryParams: Record<string, string> = {
-    originalName: file.name,
-  };
+const buildUploadUrl = ({ file, jobId, applicantId }: UploadResumeParams) => {
+  const searchParams = new URLSearchParams({
+    originalName: file.name ?? 'resume',
+  });
 
   if (jobId) {
-    queryParams.jobId = jobId;
+    searchParams.set('jobId', jobId);
   }
 
   if (applicantId) {
-    queryParams.applicantId = applicantId;
+    searchParams.set('applicantId', applicantId);
   }
 
-  // Create the request URL with query parameters
-  const url = `/files/resume/uploads?${new URLSearchParams(queryParams).toString()}`;
+  const baseUrl = env.API_URL.replace(/\/$/, '');
+  return `${baseUrl}/files/resume/uploads?${searchParams.toString()}`;
+};
 
-  // Upload the file as binary data using fetch directly since we need custom headers
-  const fullUrl = `${env.API_URL}${url}`;
+const normalizeErrorMessage = (status: number, statusText: string, bodyText: string) => {
+  if (!bodyText) {
+    return `HTTP ${status}: ${statusText}`;
+  }
 
-  const response = await fetch(fullUrl, {
+  try {
+    const parsed = JSON.parse(bodyText) as { error?: string; message?: string };
+    return parsed.error || parsed.message || `HTTP ${status}: ${statusText}`;
+  } catch {
+    return bodyText;
+  }
+};
+
+const uploadResume = async (params: UploadResumeParams): Promise<UploadResumeResponse> => {
+  const { file } = params;
+  const uploadUrl = buildUploadUrl(params);
+
+  const response = await fetch(uploadUrl, {
     method: 'POST',
     body: file,
     headers: {
-      'Content-Type': file.type,
+      'Content-Type': file.type || 'application/octet-stream',
     },
+    cache: 'no-store',
   });
 
+  const responseText = await response.text();
+
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    throw new Error(
+      normalizeErrorMessage(response.status, response.statusText, responseText)
+    );
   }
 
-  const data = await response.json();
-  return data;
+  try {
+    return JSON.parse(responseText) as UploadResumeResponse;
+  } catch {
+    throw new Error('Unexpected server response while uploading resume');
+  }
 };
 
-export const useUploadResume = () => {
-  return useMutation({
+export const useUploadResume = () =>
+  useMutation({
     mutationFn: uploadResume,
     onSuccess: (data) => {
       console.log('Resume uploaded successfully:', data);
@@ -63,4 +84,3 @@ export const useUploadResume = () => {
       console.error('Failed to upload resume:', error);
     },
   });
-};
