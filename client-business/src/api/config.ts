@@ -4,7 +4,7 @@ export const API_CONFIG = {
   USE_MOCK: false,
 
   // Base URL for the real API
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://art-bookipi-ats-api.bkpi.co/api/v1',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://art-bookipi-ats-api.t.bkpi.co/api/v1',
 
   // JWT token (in real app, this would come from auth flow)
   AUTH_TOKEN: import.meta.env.VITE_AUTH_TOKEN || '',
