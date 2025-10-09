@@ -13,25 +13,26 @@ import {
 	CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { AdditionalQuestionsSection } from './components/AdditionalQuestionsSection';
 import { FormSection } from './components/FormSection';
 import { PersonalInfoSection } from './components/PersonalInfoSection';
-import { ProfessionalInfoSection } from './components/ProfessionalInfoSection';
+import { ResumeUploadSection } from './components/ResumeUploadSection';
 import {
 	jobApplicationSchema,
 	JobApplicationFormData,
 } from '@/schemas/job-application-schema';
-import { useSubmitJobApplication } from '@/api/job-application';
+import { useSubmitApplication } from '@/hooks/mutation/useSubmitApplication';
 
 const JobApply = () => {
 	const { id } = useParams();
 	const navigate = useNavigate();
 	const { toast } = useToast();
-	const submitApplicationMutation = useSubmitJobApplication();
+	const submitApplicationMutation = useSubmitApplication();
 
 	const {
 		register,
 		handleSubmit,
+		setValue,
+		watch,
 		formState: { errors, isSubmitting },
 	} = useForm<JobApplicationFormData>({
 		resolver: zodResolver(jobApplicationSchema),
@@ -100,12 +101,13 @@ const JobApply = () => {
 							<PersonalInfoSection register={register} errors={errors} />
 						</FormSection>
 
-						<FormSection title='Professional Information'>
-							<ProfessionalInfoSection register={register} errors={errors} />
-						</FormSection>
-
-						<FormSection title='Additional Questions'>
-							<AdditionalQuestionsSection register={register} errors={errors} />
+						<FormSection title='Resume Upload'>
+							<ResumeUploadSection
+								register={register}
+								errors={errors}
+								setValue={setValue}
+								watch={watch}
+							/>
 						</FormSection>
 
 						<Card className='transition-all duration-300 hover:shadow-md'>

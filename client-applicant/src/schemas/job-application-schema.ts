@@ -1,23 +1,35 @@
 import { z } from 'zod';
 
 export const jobApplicationSchema = z.object({
-  // Personal Information
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Please enter a valid email address'),
+  name: z.string().min(1, 'Name is required'),
   phone: z.string().min(1, 'Phone number is required'),
   location: z.string().min(1, 'Current location is required'),
+});
 
-  // Professional Information
-  linkedin: z.string().url('Please enter a valid LinkedIn URL').optional().or(z.literal('')),
-  portfolio: z.string().url('Please enter a valid portfolio URL').optional().or(z.literal('')),
-  resume: z.any().refine((files) => files?.length === 1, 'Resume is required'),
-  coverLetter: z.string().optional(),
+export const resumeSchema = z.object({
+  resume: z.instanceof(File, { message: 'Please upload your resume' })
+    .refine((file) => file.size <= 10 * 1024 * 1024, 'File size must be less than 10MB')
+    .refine(
+      (file) => {
+        const allowedTypes = [
+          'application/pdf',
+          'image/jpeg',
+          'image/jpg',
+          'image/png',
+          'image/gif',
+          'image/webp'
+        ];
+        return allowedTypes.includes(file.type);
+      },
+      'Only PDF and image files (JPEG, PNG, GIF, WebP) are allowed'
+    ),
+})
 
-  // Additional Questions
-  experience: z.string().min(1, 'Years of experience is required'),
-  salary: z.string().optional(),
-  availability: z.string().optional(),
+export const postPublicApplyBodySchema = z.object({
+  jobId: z.string(),
+  applicant: jobApplicationSchema,
+  resumeFileId: z.string(),
 });
 
 export type JobApplicationFormData = z.infer<typeof jobApplicationSchema>;

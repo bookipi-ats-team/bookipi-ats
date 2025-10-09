@@ -13,24 +13,14 @@ export const PersonalInfoSection = ({
 }: PersonalInfoSectionProps) => {
 	return (
 		<>
-			<div className='grid md:grid-cols-2 gap-4'>
-				<FormField
-					id='firstName'
-					label='First Name'
-					required
-					placeholder='John'
-					error={errors.firstName?.message}
-					{...register('firstName')}
-				/>
-				<FormField
-					id='lastName'
-					label='Last Name'
-					required
-					placeholder='Doe'
-					error={errors.lastName?.message}
-					{...register('lastName')}
-				/>
-			</div>
+			<FormField
+				id='name'
+				label='Full Name'
+				required
+				placeholder='John Doe'
+				error={errors.name?.message}
+				{...register('name')}
+			/>
 
 			<FormField
 				id='email'
