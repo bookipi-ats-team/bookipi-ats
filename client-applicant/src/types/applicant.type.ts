@@ -24,4 +24,27 @@ type Application = {
   updatedAt: string;
 };
 
-export type { Applicant, Application, StageCode };
+// Extended Application type with populated job data
+type ApplicationWithJob = Application & {
+  job: {
+    _id: string;
+    businessId: string;
+    title: string;
+    description: string;
+    mustHaves: string[];
+    location?: string;
+    employmentType: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERN' | 'TEMPORARY';
+    industry?: string;
+    status: 'DRAFT' | 'PUBLISHED' | 'PAUSED' | 'CLOSED';
+    publishedAt?: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+};
+
+// Response from the public applications endpoint
+type PublicApplicationsResponse = {
+  items: ApplicationWithJob[];
+};
+
+export type { Applicant, Application, ApplicationWithJob, PublicApplicationsResponse, StageCode };
