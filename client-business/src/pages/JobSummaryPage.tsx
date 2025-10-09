@@ -3,6 +3,7 @@ import { useJob, useApplications, usePublishJob, usePauseJob, useCloseJob } from
 import { Button } from '../components/shared/Button';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import { Spinner } from '../components/shared/Spinner';
+import { getIndustryName } from '../utils/industry';
 import type { ApplicationStage } from '../types';
 
 export const JobSummaryPage: React.FC = () => {
@@ -80,7 +81,7 @@ export const JobSummaryPage: React.FC = () => {
               <div className="flex items-center gap-4 text-sm text-text-secondary">
                 <span>📍 {job.location || 'Remote'}</span>
                 <span>💼 {job.employmentType.replace('_', ' ')}</span>
-                <span>🏢 {job.industry || 'Not specified'}</span>
+                <span>🏢 {job.industry ? getIndustryName(job.industry) : 'Not specified'}</span>
               </div>
             </div>
 

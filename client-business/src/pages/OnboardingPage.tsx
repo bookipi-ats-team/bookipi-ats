@@ -1,18 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCreateBusiness } from '../hooks';
 import { Button } from '../components/shared/Button';
+import { CANONICAL_INDUSTRIES, getIndustryValue } from '../utils/industry';
 
 export const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const createBusiness = useCreateBusiness();
 
+  // Resolve industry from query param (might be alias like "900" or "transport_and_delivery")
+  const industryParam = searchParams.get('industry') || '';
+  const resolvedIndustryValue = industryParam ? getIndustryValue(industryParam) : '';
+
   const [formData, setFormData] = useState({
     name: searchParams.get('name') || '',
     description: searchParams.get('description') || '',
-    industry: searchParams.get('industry') || '',
+    industry: resolvedIndustryValue,
   });
+
+  // Update industry if query param changes
+  useEffect(() => {
+    if (industryParam) {
+      const resolved = getIndustryValue(industryParam);
+      setFormData(prev => ({ ...prev, industry: resolved }));
+    }
+  }, [industryParam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,14 +91,11 @@ export const OnboardingPage: React.FC = () => {
                 className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-focus focus:border-primary transition-all"
               >
                 <option value="">Select an industry</option>
-                <option value="Technology">Technology</option>
-                <option value="Retail">Retail</option>
-                <option value="Healthcare">Healthcare</option>
-                <option value="Finance">Finance</option>
-                <option value="Education">Education</option>
-                <option value="Manufacturing">Manufacturing</option>
-                <option value="Hospitality">Hospitality</option>
-                <option value="Other">Other</option>
+                {CANONICAL_INDUSTRIES.map((industry) => (
+                  <option key={industry.value} value={industry.value}>
+                    {industry.name}
+                  </option>
+                ))}
               </select>
             </div>
 

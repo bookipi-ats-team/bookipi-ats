@@ -1,33 +1,42 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useCreateJob, useAISuggestTitles, useAISuggestMustHaves, useAIGenerateJD, useBusiness } from '../hooks';
-import { Button } from '../components/shared/Button';
-import type { EmploymentType } from '../types';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  useCreateJob,
+  useAISuggestTitles,
+  useAISuggestMustHaves,
+  useAIGenerateJD,
+  useBusiness,
+} from "../hooks";
+import { Button } from "../components/shared/Button";
+import { CANONICAL_INDUSTRIES } from '../utils/industry';
+import type { EmploymentType } from "../types";
 
 export const NewJobPage: React.FC = () => {
   const navigate = useNavigate();
   const { data: business } = useBusiness();
+  console.log(business?._id);
+  console.log(business?.name);
   const createJob = useCreateJob();
   const suggestTitles = useAISuggestTitles();
   const suggestMustHaves = useAISuggestMustHaves();
   const generateJD = useAIGenerateJD();
 
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     mustHaves: [] as string[],
     location: '',
     employmentType: 'FULL_TIME' as EmploymentType,
-    industry: business?.industry || '',
+    industry: business?.industry || 'technology_and_digital_services',
   });
 
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
-  const [mustHaveInput, setMustHaveInput] = useState('');
+  const [mustHaveInput, setMustHaveInput] = useState("");
   const [mustHaveSuggestions, setMustHaveSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
     if (business?.industry) {
-      setFormData(prev => ({ ...prev, industry: business.industry || '' }));
+      setFormData((prev) => ({ ...prev, industry: business.industry || "" }));
     }
   }, [business]);
 
@@ -35,13 +44,13 @@ export const NewJobPage: React.FC = () => {
     if (!business) return;
     try {
       const result = await suggestTitles.mutateAsync({
-        businessId: business.id,
+        businessId: business._id,
         industry: business.industry,
         description: business.description,
       });
       setTitleSuggestions(result.items);
     } catch (error) {
-      console.error('Failed to get title suggestions:', error);
+      console.error("Failed to get title suggestions:", error);
     }
   };
 
@@ -54,7 +63,7 @@ export const NewJobPage: React.FC = () => {
       });
       setMustHaveSuggestions(result.items);
     } catch (error) {
-      console.error('Failed to get must-have suggestions:', error);
+      console.error("Failed to get must-have suggestions:", error);
     }
   };
 
@@ -70,23 +79,26 @@ export const NewJobPage: React.FC = () => {
           industry: business.industry,
         },
       });
-      setFormData(prev => ({ ...prev, description: result.text }));
+      setFormData((prev) => ({ ...prev, description: result.text }));
     } catch (error) {
-      console.error('Failed to generate JD:', error);
+      console.error("Failed to generate JD:", error);
     }
   };
 
   const handleAddMustHave = (value: string) => {
     if (value && !formData.mustHaves.includes(value)) {
-      setFormData(prev => ({ ...prev, mustHaves: [...prev.mustHaves, value] }));
-      setMustHaveInput('');
+      setFormData((prev) => ({
+        ...prev,
+        mustHaves: [...prev.mustHaves, value],
+      }));
+      setMustHaveInput("");
     }
   };
 
   const handleRemoveMustHave = (value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      mustHaves: prev.mustHaves.filter(item => item !== value),
+      mustHaves: prev.mustHaves.filter((item) => item !== value),
     }));
   };
 
@@ -96,18 +108,18 @@ export const NewJobPage: React.FC = () => {
 
     try {
       const job = await createJob.mutateAsync({
-        businessId: business.id,
+        businessId: business._id,
         ...formData,
       });
-      
+
       if (publish) {
         // In a real app, we'd call publishJob here
-        console.log('Publishing job:', job.id);
+        console.log("Publishing job:", job._id);
       }
-      
-      navigate('/jobs');
+
+      navigate("/jobs");
     } catch (error) {
-      console.error('Failed to create job:', error);
+      console.error("Failed to create job:", error);
     }
   };
 
@@ -117,12 +129,14 @@ export const NewJobPage: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => navigate('/jobs')}
+            onClick={() => navigate("/jobs")}
             className="text-sm text-text-secondary hover:text-text-primary mb-4 flex items-center gap-1"
           >
             ← Back to Jobs
           </button>
-          <h1 className="text-2xl font-semibold text-text-primary">Create New Job</h1>
+          <h1 className="text-2xl font-semibold text-text-primary">
+            Create New Job
+          </h1>
           <p className="text-sm text-text-secondary mt-1">
             Use AI suggestions to quickly create a job posting
           </p>
@@ -156,7 +170,9 @@ export const NewJobPage: React.FC = () => {
               type="text"
               required
               value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, title: e.target.value }))
+              }
               className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-focus focus:border-primary transition-all"
               placeholder="e.g., Senior Software Engineer"
             />
@@ -167,7 +183,9 @@ export const NewJobPage: React.FC = () => {
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, title: suggestion }))}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, title: suggestion }))
+                    }
                     className="px-3 py-1.5 text-sm bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition-colors"
                   >
                     {suggestion}
@@ -207,7 +225,7 @@ export const NewJobPage: React.FC = () => {
                 value={mustHaveInput}
                 onChange={(e) => setMustHaveInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     e.preventDefault();
                     handleAddMustHave(mustHaveInput);
                   }
@@ -286,7 +304,12 @@ export const NewJobPage: React.FC = () => {
             <textarea
               required
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
               rows={12}
               className="w-full px-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-focus focus:border-primary transition-all resize-none font-mono text-sm"
               placeholder="Enter job description..."
@@ -294,7 +317,7 @@ export const NewJobPage: React.FC = () => {
           </div>
 
           {/* Additional Details */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1.5">
                 Location
@@ -302,7 +325,9 @@ export const NewJobPage: React.FC = () => {
               <input
                 type="text"
                 value={formData.location}
-                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, location: e.target.value }))
+                }
                 className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-focus focus:border-primary transition-all"
                 placeholder="e.g., Makati, Philippines"
               />
@@ -314,7 +339,12 @@ export const NewJobPage: React.FC = () => {
               </label>
               <select
                 value={formData.employmentType}
-                onChange={(e) => setFormData(prev => ({ ...prev, employmentType: e.target.value as EmploymentType }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    employmentType: e.target.value as EmploymentType,
+                  }))
+                }
                 className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-focus focus:border-primary transition-all"
               >
                 <option value="FULL_TIME">Full-Time</option>
@@ -324,6 +354,23 @@ export const NewJobPage: React.FC = () => {
                 <option value="TEMPORARY">Temporary</option>
               </select>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1.5">
+                Industry
+              </label>
+              <select
+                value={formData.industry}
+                onChange={(e) => setFormData(prev => ({ ...prev, industry: e.target.value }))}
+                className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-focus focus:border-primary transition-all"
+              >
+                {CANONICAL_INDUSTRIES.map((industry) => (
+                  <option key={industry.value} value={industry.value}>
+                    {industry.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Actions */}
@@ -331,7 +378,7 @@ export const NewJobPage: React.FC = () => {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => navigate('/jobs')}
+              onClick={() => navigate("/jobs")}
             >
               Cancel
             </Button>
