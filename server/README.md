@@ -101,8 +101,11 @@ Create a `.env` file if you need to override defaults. The server logs the activ
 - `GET /applications/:id/notes` → `200 OK Note[]`
 
 ### Files (Resumes)
-- `POST /files/resume/sign` body `{ mimeType, sizeBytes }` → `200 OK { uploadUrl, fileId }`
-- `POST /files/resume/confirm` body `{ fileId, applicantId?, jobId?, originalName, mimeType, sizeBytes }` → `200 OK ResumeFile` (triggers async parsing/scoring)
+- `POST /files/resume/uploads?applicantId=&jobId=&originalName=` raw body=`<binary>` → `200 OK ResumeFile`
+  - Requires `Content-Type` header set to a supported resume MIME type (`pdf`, `doc`, `docx`, `odt`, `txt`).
+  - `applicantId` and `jobId` query params are optional and validate that linked records exist and share the same business.
+  - `originalName` query param lets clients override the stored filename; defaults to `<generated>.extension` when omitted.
+  - Payload size must be > 0 bytes and ≤ `env.maxResumeFileSize`; successful uploads enqueue resume parsing/scoring.
 
 ### AI Services
 - `POST /ai/suggest-job-titles` body `{ businessId?, industry?, description? }` → `200 OK { items: string[], source: "AI" | "STATIC" }`
