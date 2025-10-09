@@ -120,6 +120,7 @@ const processResumeFile = async (resumeFileId: Types.ObjectId) => {
     resumeFile.parseError = undefined;
 
     await resumeFile.save();
+    console.log(`[Resume Parsing] Parsed resume ${resumeFileId}`);
   } catch (error) {
     const attempts = resumeFile.parseAttempts ?? 1;
     const message =
