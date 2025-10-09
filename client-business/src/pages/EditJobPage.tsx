@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useJob, useUpdateJob, useAISuggestTitles, useAISuggestMustHaves, useAIGenerateJD, useBusiness } from '../hooks';
 import { Button } from '../components/shared/Button';
 import { Spinner } from '../components/shared/Spinner';
+import { CANONICAL_INDUSTRIES } from '../utils/industry';
 import type { EmploymentType } from '../types';
 
 export const EditJobPage: React.FC = () => {
@@ -318,7 +319,7 @@ export const EditJobPage: React.FC = () => {
           </div>
 
           {/* Additional Details */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1.5">
                 Location
@@ -348,19 +349,24 @@ export const EditJobPage: React.FC = () => {
                 <option value="TEMPORARY">Temporary</option>
               </select>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-1.5">
-              Industry
-            </label>
-            <input
-              type="text"
-              value={formData.industry}
-              onChange={(e) => setFormData(prev => ({ ...prev, industry: e.target.value }))}
-              className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-focus focus:border-primary transition-all"
-              placeholder="e.g., Technology"
-            />
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1.5">
+                Industry
+              </label>
+              <select
+                value={formData.industry}
+                onChange={(e) => setFormData(prev => ({ ...prev, industry: e.target.value }))}
+                className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-focus focus:border-primary transition-all"
+              >
+                <option value="">Select an industry</option>
+                {CANONICAL_INDUSTRIES.map((industry) => (
+                  <option key={industry.value} value={industry.value}>
+                    {industry.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Actions */}

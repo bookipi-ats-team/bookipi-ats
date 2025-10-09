@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateJob, useAISuggestTitles, useAISuggestMustHaves, useAIGenerateJD, useBusiness } from '../hooks';
 import { Button } from '../components/shared/Button';
+import { CANONICAL_INDUSTRIES } from '../utils/industry';
 import type { EmploymentType } from '../types';
 
 export const NewJobPage: React.FC = () => {
@@ -18,7 +19,7 @@ export const NewJobPage: React.FC = () => {
     mustHaves: [] as string[],
     location: '',
     employmentType: 'FULL_TIME' as EmploymentType,
-    industry: business?.industry || '',
+    industry: business?.industry || 'technology_and_digital_services',
   });
 
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
@@ -294,7 +295,7 @@ export const NewJobPage: React.FC = () => {
           </div>
 
           {/* Additional Details */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1.5">
                 Location
@@ -322,6 +323,23 @@ export const NewJobPage: React.FC = () => {
                 <option value="CONTRACT">Contract</option>
                 <option value="INTERN">Intern</option>
                 <option value="TEMPORARY">Temporary</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1.5">
+                Industry
+              </label>
+              <select
+                value={formData.industry}
+                onChange={(e) => setFormData(prev => ({ ...prev, industry: e.target.value }))}
+                className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-focus focus:border-primary transition-all"
+              >
+                {CANONICAL_INDUSTRIES.map((industry) => (
+                  <option key={industry.value} value={industry.value}>
+                    {industry.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
