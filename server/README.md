@@ -18,14 +18,14 @@ Environment variables:
 - `NODE_ENV` (default `development`)
 - `MONGODB_URI` (optional) – MongoDB connection string; if omitted, the server boots without a database connection and logs a warning
 - `OPENAI_API_KEY` (optional) – enables AI-backed suggestions; when missing, all AI endpoints return deterministic static fallbacks
-- `GOOGLE_DRIVE_CREDENTIALS_PATH` (default `./credentials.json`) – path to the Google service account JSON used for Drive access
+- `GOOGLE_DRIVE_CREDENTIALS_BASE64` (required for Drive features) – base64-encoded Google service account JSON credentials
 - `GOOGLE_DRIVE_FOLDER_ID` (required) – Drive folder where finalized resume files are stored
 
 Create a `.env` file if you need to override defaults. The server logs the active port and environment on boot.
 
 ### Resume Storage (Google Drive)
-- Place your Google Cloud service account JSON key outside of version control. Reference it via `GOOGLE_DRIVE_CREDENTIALS_PATH` (defaults to `./credentials.json`).
-- Share the target Drive folder with the service account email and set `GOOGLE_DRIVE_FOLDER_ID` to that folder's ID (`1k8Os2R9oUauuGVreY-pV0aIuWiXqmqsz` in development).
+- Encode your Google Cloud service account JSON key as base64: `cat credentials.json | base64` and set it as `GOOGLE_DRIVE_CREDENTIALS_BASE64` in your environment variables.
+- Share the target Drive folder with the service account email and set `GOOGLE_DRIVE_FOLDER_ID` to that folder's ID.
 - Resume uploads are staged locally under `uploads/resumes/tmp` and pushed to Drive during confirmation; successful confirmations store the Drive file ID in `storagePath` and return the public Drive URL.
 - If a confirmation fails after upload, the API attempts to delete the Drive file and leaves the temp upload cleaned up.
 
