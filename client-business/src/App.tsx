@@ -8,6 +8,7 @@ import { NewJobPage } from './pages/NewJobPage';
 import { EditJobPage } from './pages/EditJobPage';
 import { JobSummaryPage } from './pages/JobSummaryPage';
 import { PipelinePage } from './pages/PipelinePage';
+import { AddApplicantPage } from './pages/AddApplicantPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +32,7 @@ function App() {
             <Route path="jobs/new" element={<NewJobPage />} />
             <Route path="jobs/:jobId" element={<JobSummaryPage />} />
             <Route path="jobs/:jobId/edit" element={<EditJobPage />} />
+            <Route path="jobs/:jobId/add-applicant" element={<AddApplicantPage />} />
             <Route path="jobs/:jobId/pipeline" element={<PipelinePage />} />
           </Route>
         </Routes>

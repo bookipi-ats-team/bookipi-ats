@@ -92,6 +92,12 @@ export const JobSummaryPage: React.FC = () => {
               >
                 Edit Job
               </Button>
+              <Button
+                variant="secondary"
+                onClick={() => navigate(`/jobs/${jobId}/add-applicant`)}
+              >
+                Add Applicant
+              </Button>
               {job.status === 'DRAFT' && (
                 <Button
                   onClick={() => handleAction('publish')}

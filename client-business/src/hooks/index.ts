@@ -21,6 +21,7 @@ import type {
   CreateJobInput,
   UpdateJobInput,
   ApplicationWithDetails,
+  CreateApplicationInput,
   UpdateApplicationInput,
   Note,
   CreateNoteInput,
@@ -213,6 +214,21 @@ export const useMoveApplication = (): UseMutationResult<
     onSuccess: (data) => {
       queryClient.setQueryData(["application", data._id], data);
       queryClient.invalidateQueries({ queryKey: ["applications", data.jobId] });
+    },
+  });
+};
+
+export const useCreateApplication = (): UseMutationResult<
+  ApplicationWithDetails,
+  Error,
+  CreateApplicationInput
+> => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: applicationsApi.create,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["applications", data.jobId] });
+      queryClient.invalidateQueries({ queryKey: ["job", data.jobId] });
     },
   });
 };

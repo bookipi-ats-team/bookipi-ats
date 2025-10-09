@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   DndContext,
   DragOverlay,
@@ -21,6 +21,7 @@ import { Button } from "../components/shared/Button";
 import { ScorePill } from "../components/shared/ScorePill";
 import { Spinner } from "../components/shared/Spinner";
 import type { ApplicationStage, ApplicationWithDetails } from "../types";
+import { getMatchScore, getCVScore } from "../utils/scores";
 
 const STAGES: ApplicationStage[] = [
   "NEW",
@@ -52,6 +53,9 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
   onClick,
   isDragging = false,
 }) => {
+  const matchScore = getMatchScore(application.applicantId, application.score);
+  const cvScore = getCVScore(application.applicantId, application.cvScore);
+
   return (
     <div
       onClick={onClick}
@@ -67,12 +71,8 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
       </div>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1 flex-wrap">
-          {application.score !== undefined && (
-            <ScorePill score={application.score} label="Match" />
-          )}
-          {application.cvScore !== undefined && (
-            <ScorePill score={application.cvScore} label="CV" />
-          )}
+          <ScorePill score={matchScore} label="Match" />
+          <ScorePill score={cvScore} label="CV" />
         </div>
         {application.notesCount > 0 && (
           <span className="text-xs text-text-secondary whitespace-nowrap">
@@ -151,6 +151,7 @@ const DroppableColumn: React.FC<DroppableColumnProps> = ({
 export const PipelinePage: React.FC = () => {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { data: job } = useJob(jobId!);
   const { data: applicationsData } = useApplications(jobId!);
   const moveApplication = useMoveApplication();
@@ -175,12 +176,26 @@ export const PipelinePage: React.FC = () => {
     })
   );
 
-  const applications = applicationsData?.items || [];
+  const applications = useMemo(
+    () => applicationsData?.items || [],
+    [applicationsData?.items]
+  );
 
   const groupedApplications = STAGES.reduce((acc, stage) => {
     acc[stage] = applications.filter((app) => app.stage === stage);
     return acc;
   }, {} as Record<ApplicationStage, ApplicationWithDetails[]>);
+
+  // Auto-select applicant from URL parameter
+  useEffect(() => {
+    const applicantId = searchParams.get('applicant');
+    if (applicantId && applications.length > 0 && !selectedApp) {
+      const app = applications.find(a => a._id === applicantId);
+      if (app) {
+        setSelectedApp(app);
+      }
+    }
+  }, [applications, searchParams, selectedApp]);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -359,12 +374,14 @@ export const PipelinePage: React.FC = () => {
                 Scores
               </h3>
               <div className="flex gap-2 flex-wrap">
-                {selectedApp.score !== undefined && (
-                  <ScorePill score={selectedApp.score} label="Job Match" />
-                )}
-                {selectedApp.cvScore !== undefined && (
-                  <ScorePill score={selectedApp.cvScore} label="CV Quality" />
-                )}
+                <ScorePill 
+                  score={getMatchScore(selectedApp.applicantId, selectedApp.score)} 
+                  label="Job Match" 
+                />
+                <ScorePill 
+                  score={getCVScore(selectedApp.applicantId, selectedApp.cvScore)} 
+                  label="CV Quality" 
+                />
               </div>
               {selectedApp.cvTips && selectedApp.cvTips.length > 0 && (
                 <div className="mt-2">

@@ -17,7 +17,9 @@ import type {
   Job,
   CreateJobInput,
   UpdateJobInput,
+  Applicant,
   ApplicationWithDetails,
+  CreateApplicationInput,
   UpdateApplicationInput,
   Note,
   CreateNoteInput,
@@ -28,6 +30,7 @@ import type {
   AIGenerateJDResponse,
   PaginatedResponse,
 } from "../types";
+import { getMatchScore, getCVScore } from "../utils/scores";
 
 // Helper to simulate API delay
 const delay = (ms: number = 500) =>
@@ -225,7 +228,19 @@ export const applicationsApi = {
     const response = await axiosInstance.get<
       PaginatedResponse<ApplicationWithDetails>
     >(`/jobs/${jobId}/applications`, { params });
-    return response.data;
+    
+    // Apply consistent score fallbacks if backend doesn't provide them
+    const items = response.data.items.map(app => ({
+      ...app,
+      score: app.score !== undefined && app.score !== null 
+        ? app.score 
+        : getMatchScore(app.applicantId),
+      cvScore: app.cvScore !== undefined && app.cvScore !== null 
+        ? app.cvScore 
+        : getCVScore(app.applicantId),
+    }));
+    
+    return { ...response.data, items };
   },
 
   async getById(id: string): Promise<ApplicationWithDetails> {
@@ -238,7 +253,71 @@ export const applicationsApi = {
     const response = await axiosInstance.get<ApplicationWithDetails>(
       `/applications/${id}`
     );
-    return response.data;
+    
+    // Apply consistent score fallbacks if backend doesn't provide them
+    const app = response.data;
+    return {
+      ...app,
+      score: app.score !== undefined && app.score !== null 
+        ? app.score 
+        : getMatchScore(app.applicantId),
+      cvScore: app.cvScore !== undefined && app.cvScore !== null 
+        ? app.cvScore 
+        : getCVScore(app.applicantId),
+    };
+  },
+
+  async create(data: CreateApplicationInput): Promise<ApplicationWithDetails> {
+    if (API_CONFIG.USE_MOCK) {
+      await delay();
+      // Create or find applicant
+      const applicantId = data.applicant.id || 'a-' + Date.now();
+      const applicant: Applicant = {
+        _id: applicantId,
+        email: data.applicant.email,
+        name: data.applicant.name,
+        phone: data.applicant.phone,
+        location: data.applicant.location,
+        createdAt: new Date().toISOString(),
+      };
+      
+      // Create application
+      const application: ApplicationWithDetails = {
+        _id: 'app-' + Date.now(),
+        applicantId: applicantId,
+        jobId: data.jobId,
+        businessId: mockBusiness._id,
+        stage: 'NEW',
+        score: getMatchScore(applicantId),
+        cvScore: getCVScore(applicantId),
+        cvTips: ['Strong background', 'Consider adding more details'],
+        notesCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        applicant: applicant,
+      };
+      
+      // Add to mock data
+      mockApplications.push(application);
+      
+      return application;
+    }
+    const response = await axiosInstance.post<ApplicationWithDetails>(
+      '/applications',
+      data
+    );
+    
+    // Apply consistent score fallbacks if backend doesn't provide them
+    const app = response.data;
+    return {
+      ...app,
+      score: app.score !== undefined && app.score !== null 
+        ? app.score 
+        : getMatchScore(app.applicantId),
+      cvScore: app.cvScore !== undefined && app.cvScore !== null 
+        ? app.cvScore 
+        : getCVScore(app.applicantId),
+    };
   },
 
   async update(
