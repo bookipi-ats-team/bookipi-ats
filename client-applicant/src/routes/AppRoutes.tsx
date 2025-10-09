@@ -59,20 +59,22 @@ const AppRoutes = () => {
 	const location = useLocation();
 	return (
 		<AnimatePresence mode='wait'>
-			<Routes location={location} key={location.pathname}>
-				{APP_ROUTE_LIST.map((route) => (
-					<Route
-						key={route.path}
-						path={route.path}
-						element={
-							<Transition className='h-full w-full' type='fade'>
-								{route.element}
-							</Transition>
-						}
-					/>
-				))}
-				<Route path='*' element={<NotFound />} />
-			</Routes>
+			<main className='app-container'>
+				<Routes location={location} key={location.pathname}>
+					{APP_ROUTE_LIST.map((route) => (
+						<Route
+							key={route.path}
+							path={route.path}
+							element={
+								<Transition className='h-full w-full' type='fade'>
+									{route.element}
+								</Transition>
+							}
+						/>
+					))}
+					<Route path='*' element={<NotFound />} />
+				</Routes>
+			</main>
 		</AnimatePresence>
 	);
 };

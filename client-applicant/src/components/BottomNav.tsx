@@ -14,7 +14,7 @@ const BottomNav = () => {
 
 	return (
 		<nav className='md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 backdrop-blur-sm'>
-			<div className='flex items-center justify-around h-16 px-4'>
+			<div className='flex items-center justify-around p-4 pb-safe-bottom'>
 				{navItems.map((item) => {
 					const Icon = item.icon;
 					const active = isActive(item.path);
