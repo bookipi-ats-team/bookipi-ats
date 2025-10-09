@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { filterSchema, FilterFormData } from '@/schemas/filter-schema';
-import { JobFilters } from '@/types/job';
+import { JobFilters } from '@/types/job.type';
 import {
 	Form,
 	FormControl,
@@ -59,16 +59,130 @@ const filterOptions = {
 		{ value: 'Chinese', label: 'Chinese' },
 	],
 	industry: [
-		{ value: 'all', label: 'All Industries' },
-		{ value: 'Technology', label: 'Technology' },
-		{ value: 'Healthcare', label: 'Healthcare' },
-		{ value: 'Finance', label: 'Finance' },
-		{ value: 'Education', label: 'Education' },
-		{ value: 'Marketing', label: 'Marketing' },
-		{ value: 'Design', label: 'Design' },
-		{ value: 'Sales', label: 'Sales' },
-		{ value: 'Data & Analytics', label: 'Data & Analytics' },
-		{ value: 'Management', label: 'Management' },
+		{
+			label: 'Building construction and trade',
+			value: 'building_construction_and_trade',
+		},
+		{
+			label: 'Personal services',
+			value: 'personal_services',
+		},
+		{
+			label: 'Professional services',
+			value: 'professional_services',
+		},
+		{
+			label: 'Transportation',
+			value: 'transportation',
+		},
+		{
+			label: 'Digital products',
+			value: 'digital_products',
+		},
+		{
+			label: 'Education',
+			value: 'education',
+		},
+		{
+			label: 'Farming and agriculture',
+			value: 'farming_and_agriculture',
+		},
+		{
+			label: 'Membership organisation',
+			value: 'membership_organisation',
+		},
+		{
+			label: 'Retail food and drink',
+			value: 'retail_food_and_drink',
+		},
+		{
+			label: 'Financial services',
+			value: 'financial_services',
+		},
+		{
+			label: 'Travel and lodging',
+			value: 'travel_and_lodging',
+		},
+		{
+			label: 'Medical services',
+			value: 'medical_services',
+		},
+		{
+			label: 'Entertainment and recreation',
+			value: 'entertainment_and_recreation',
+		},
+		{
+			label: 'Regulated and age restricted products',
+			value: 'regulated_and_age_restricted_products',
+		},
+		{
+			label: 'Non-profit and charity',
+			value: 'non_profit_and_charity',
+		},
+		{
+			label: 'Other',
+			value: 'other',
+		},
+		{
+			label: 'Accounting & Finance',
+			value: 'accounting_and_finance',
+		},
+		{
+			label: 'Arts & Recreation',
+			value: 'arts_and_recreation',
+		},
+		{
+			label: 'Beauty & Wellness',
+			value: 'beauty_and_wellness',
+		},
+		{
+			label: 'Cleaning & Maintenance',
+			value: 'cleaning_and_maintenance',
+		},
+		{
+			label: 'Construction & Trades',
+			value: 'construction_and_trades',
+		},
+		{
+			label: 'Consulting & Business Services',
+			value: 'consulting_and_business_services',
+		},
+		{
+			label: 'Education & Training',
+			value: 'education_and_training',
+		},
+		{
+			label: 'Energy & Utilities',
+			value: 'energy_and_utilities',
+		},
+		{
+			label: 'Food & Beverage',
+			value: 'food_and_beverage',
+		},
+		{
+			label: 'Health & Care Services',
+			value: 'health_and_care_services',
+		},
+		{
+			label: 'Manufacturing & Production',
+			value: 'manufacturing_and_production',
+		},
+		{
+			label: 'Retail & Wholesale',
+			value: 'retail_and_wholesale',
+		},
+		{
+			label: 'Technology & Digital Services',
+			value: 'technology_and_digital_services',
+		},
+		{
+			label: 'Tourism & Accommodation',
+			value: 'tourism_and_accommodation',
+		},
+		{
+			label: 'Transport & Delivery',
+			value: 'transport_and_delivery',
+		},
 	],
 	payRange: [
 		{ value: 'all', label: 'Any Salary' },
@@ -88,49 +202,9 @@ const FilterSection = ({
 }: FilterSectionProps) => {
 	const form = useForm<FilterFormData>({
 		resolver: zodResolver(filterSchema),
-		defaultValues: {
-			searchQuery: initialFilters?.searchQuery || '',
-			jobType: initialFilters?.jobType || 'all',
-			location: initialFilters?.location || 'all',
-			datePosted: initialFilters?.datePosted || 'all',
-			language: initialFilters?.language || 'all',
-			industry: initialFilters?.industry || 'all',
-			payRange: initialFilters?.payRange || 'all',
-		},
 	});
 
-	const watchedValues = form.watch();
-
-	// Watch for changes and trigger filter updates with debouncing
-	React.useEffect(() => {
-		const timeoutId = setTimeout(() => {
-			const filters: JobFilters = {
-				searchQuery: watchedValues.searchQuery || '',
-				jobType: watchedValues.jobType || 'all',
-				location: watchedValues.location || 'all',
-				datePosted: watchedValues.datePosted || 'all',
-				language: watchedValues.language || 'all',
-				industry: watchedValues.industry || 'all',
-				payRange: watchedValues.payRange || 'all',
-			};
-			onFiltersChange(filters);
-		}, 300); // 300ms debounce
-
-		return () => clearTimeout(timeoutId);
-	}, [watchedValues, onFiltersChange]);
-
-	const onSubmit = (data: FilterFormData) => {
-		const filters: JobFilters = {
-			searchQuery: data.searchQuery || '',
-			jobType: data.jobType || 'all',
-			location: data.location || 'all',
-			datePosted: data.datePosted || 'all',
-			language: data.language || 'all',
-			industry: data.industry || 'all',
-			payRange: data.payRange || 'all',
-		};
-		onFiltersChange(filters);
-	};
+	const onSubmit = (data: FilterFormData) => onFiltersChange(data);
 
 	const content = (
 		<Form {...form}>
@@ -138,7 +212,7 @@ const FilterSection = ({
 				{/* Search */}
 				<FormField
 					control={form.control}
-					name='searchQuery'
+					name='q'
 					render={({ field }) => (
 						<FormItem>
 							<FormLabel className='text-sm font-medium text-foreground flex items-center gap-2'>
@@ -160,7 +234,7 @@ const FilterSection = ({
 				/>
 
 				{/* Job Type */}
-				<FormField
+				{/* <FormField
 					control={form.control}
 					name='jobType'
 					render={({ field }) => (
@@ -175,7 +249,7 @@ const FilterSection = ({
 							/>
 						</FormItem>
 					)}
-				/>
+				/> */}
 
 				{/* Location */}
 				<FormField
@@ -196,7 +270,7 @@ const FilterSection = ({
 				/>
 
 				{/* Date Posted */}
-				<FormField
+				{/* <FormField
 					control={form.control}
 					name='datePosted'
 					render={({ field }) => (
@@ -211,25 +285,7 @@ const FilterSection = ({
 							/>
 						</FormItem>
 					)}
-				/>
-
-				{/* Language */}
-				<FormField
-					control={form.control}
-					name='language'
-					render={({ field }) => (
-						<FormItem>
-							<FilterSelect
-								label='Language'
-								icon={<Globe className='h-4 w-4' />}
-								value={field.value}
-								onValueChange={field.onChange}
-								placeholder='All Languages'
-								options={filterOptions.language}
-							/>
-						</FormItem>
-					)}
-				/>
+				/> */}
 
 				{/* Industry */}
 				<FormField
@@ -250,7 +306,7 @@ const FilterSection = ({
 				/>
 
 				{/* Pay Range */}
-				<FormField
+				{/* <FormField
 					control={form.control}
 					name='payRange'
 					render={({ field }) => (
@@ -265,7 +321,7 @@ const FilterSection = ({
 							/>
 						</FormItem>
 					)}
-				/>
+				/> */}
 
 				<Button type='submit' className='w-full'>
 					<Search className='h-4 w-4 mr-2' />

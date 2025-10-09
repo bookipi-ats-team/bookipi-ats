@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import BottomNav from '@/components/BottomNav';
@@ -12,32 +14,86 @@ import {
 	CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { AdditionalQuestionsSection } from './components/AdditionalQuestionsSection';
-import { FormField } from './components/FormField';
 import { FormSection } from './components/FormSection';
 import { PersonalInfoSection } from './components/PersonalInfoSection';
-import { ProfessionalInfoSection } from './components/ProfessionalInfoSection';
+import { ResumeUploadSection } from './components/ResumeUploadSection';
+import {
+	jobApplicationSchema,
+	JobApplicationFormData,
+} from '@/schemas/job-application-schema';
+import { useSubmitApplication } from '@/hooks/mutation/useSubmitApplication';
 
 const JobApply = () => {
 	const { id } = useParams();
 	const navigate = useNavigate();
 	const { toast } = useToast();
-	const [isSubmitting, setIsSubmitting] = useState(false);
+	const submitApplicationMutation = useSubmitApplication();
+	const [isUploadingResume, setIsUploadingResume] = useState(false);
 
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		setIsSubmitting(true);
+	const handleResumeUploadStatusChange = useCallback((isUploading: boolean) => {
+		setIsUploadingResume(isUploading);
+	}, []);
 
-		// Simulate API call
-		setTimeout(() => {
+	const {
+		register,
+		handleSubmit,
+		setValue,
+		watch,
+		formState: { errors, isSubmitting },
+	} = useForm<JobApplicationFormData>({
+		resolver: zodResolver(jobApplicationSchema),
+	});
+
+	const onSubmit = async (data: JobApplicationFormData) => {
+		if (!id) {
+			toast({
+				title: 'Error',
+				description: 'Job ID is missing',
+				variant: 'destructive',
+			});
+			return;
+		}
+
+	const resumeFileId = data.resumeFileId;
+
+	if (!resumeFileId) {
+		toast({
+			title: 'Resume Required',
+			description: 'Please upload your resume before submitting the application.',
+			variant: 'destructive',
+		});
+		return;
+	}
+
+	try {
+		const applicationData = {
+			email: data.email,
+			name: data.name,
+			phone: data.phone,
+			location: data.location,
+		};
+
+		await submitApplicationMutation.mutateAsync({
+			jobId: id,
+			data: applicationData,
+			resumeFileId,
+		});
+
+
 			toast({
 				title: 'Application Submitted!',
 				description:
 					"Your application has been sent successfully. We'll be in touch soon.",
 			});
-			setIsSubmitting(false);
-			navigate('/my-applications');
-		}, 1500);
+
+			navigate('/jobs/apply/success');
+		} catch (error) {
+			toast({
+				title: 'Error',
+				description: 'Failed to submit application. Please try again.',
+				variant: 'destructive',
+			});
+		}
 	};
 
 	return (
@@ -66,28 +122,43 @@ const JobApply = () => {
 						</CardHeader>
 					</Card>
 
-					<form onSubmit={handleSubmit} className='space-y-6'>
+					<form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
 						<FormSection title='Personal Information'>
-							<PersonalInfoSection />
+							<PersonalInfoSection register={register} errors={errors} />
 						</FormSection>
 
-						<FormSection title='Professional Information'>
-							<ProfessionalInfoSection />
-						</FormSection>
+						<FormSection title='Resume Upload'>
+						<ResumeUploadSection
+							register={register}
+							errors={errors}
+							setValue={setValue}
+							watch={watch}
+							jobId={id}
+							onUploadStatusChange={handleResumeUploadStatusChange}
+						/>
 
-						<FormSection title='Additional Questions'>
-							<AdditionalQuestionsSection />
 						</FormSection>
 
 						<Card className='transition-all duration-300 hover:shadow-md'>
 							<CardContent className='pt-6'>
-								<Button
-									type='submit'
-									className='w-full bg-gradient-primary hover:opacity-90 font-semibold py-6 text-lg transition-transform duration-200 hover:scale-105'
-									disabled={isSubmitting}
-								>
-									{isSubmitting ? 'Submitting...' : 'Submit Application'}
-								</Button>
+						<Button
+							type='submit'
+							className='w-full bg-gradient-primary hover:opacity-90 font-semibold py-6 text-lg transition-transform duration-200 hover:scale-105'
+							disabled={
+							isSubmitting ||
+							isUploadingResume ||
+							submitApplicationMutation.isPending
+							}
+						>
+							{isUploadingResume
+								? 'Uploading Resume...'
+								: submitApplicationMutation.isPending
+								? 'Submitting Application...'
+								: isSubmitting
+								? 'Processing...'
+								: 'Submit Application'}
+						</Button>
+
 							</CardContent>
 						</Card>
 					</form>

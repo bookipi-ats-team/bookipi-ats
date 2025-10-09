@@ -1,30 +1,22 @@
 import { useState } from 'react';
-import { LayoutGrid, List } from 'lucide-react';
+import { LayoutGrid, List, ChevronLeft, ChevronRight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import BottomNav from '@/components/BottomNav';
 import JobCard from './components/JobCard';
 import FilterSection from './components/FilterSection';
 import JobListSkeleton from './components/JobListSkeleton';
-import Pagination from './components/Pagination';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useJobs } from '@/hooks/useJobs';
-import { JobFilters } from '@/types/job';
+import { useJobs } from '@/hooks/query/useJobs';
+import { JobFilters } from '@/types/job.type';
+import { Button } from '@/components/ui/button';
 
 const JobList = () => {
 	const [currentPage, setCurrentPage] = useState(1);
 	const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
-	const [filters, setFilters] = useState<JobFilters>({
-		searchQuery: '',
-		jobType: 'all',
-		location: 'all',
-		datePosted: 'all',
-		language: 'all',
-		industry: 'all',
-		payRange: 'all',
-	});
+	const [filters, setFilters] = useState<JobFilters>({});
 
 	// Fetch jobs using TanStack Query
-	const { data, isLoading, error } = useJobs(currentPage, filters);
+	const { data, isLoading, error } = useJobs(filters);
 
 	const handleFiltersChange = (newFilters: JobFilters) => {
 		setFilters(newFilters);
@@ -63,24 +55,9 @@ const JobList = () => {
 					<div className='flex-1 space-y-6'>
 						{/* Results Header */}
 						<div
-							className='flex justify-between items-center '
+							className='flex justify-end items-center '
 							style={{ animationDelay: '100ms' }}
 						>
-							<p className='text-muted-foreground'>
-								{isLoading ? (
-									'Loading jobs...'
-								) : error ? (
-									'Error loading jobs'
-								) : (
-									<>
-										Found{' '}
-										<span className='font-semibold text-foreground'>
-											{data?.totalJobs || 0}
-										</span>{' '}
-										jobs
-									</>
-								)}
-							</p>
 							<ToggleGroup
 								type='single'
 								value={viewMode}
@@ -112,9 +89,9 @@ const JobList = () => {
 									viewMode === 'card' ? 'grid grid-cols-2 gap-4' : 'space-y-3'
 								}
 							>
-								{data?.jobs.map((job, index) => (
+								{data?.items.map((job, index) => (
 									<JobCard
-										key={job.id}
+										key={job._id}
 										job={job}
 										viewMode={viewMode}
 										index={index}
@@ -123,16 +100,51 @@ const JobList = () => {
 							</div>
 						)}
 
-						{/* Pagination */}
-						{data && data.totalPages > 1 && (
+						{!isLoading && !data?.items?.length && (
+							<div className='flex justify-center mt-8 text-base text-gray-600'>
+								No jobs found
+							</div>
+						)}
+
+						{!isLoading && !!data?.items?.length && (
 							<div className='flex justify-center mt-8'>
-								<Pagination
-									currentPage={data.currentPage}
-									totalPages={data.totalPages}
-									hasNextPage={data.hasNextPage}
-									hasPreviousPage={data.hasPreviousPage}
-									onPageChange={handlePageChange}
-								/>
+								<div className='flex items-center justify-center space-x-2'>
+									{data.previousCursor && (
+										<Button
+											variant='outline'
+											size='sm'
+											onClick={() =>
+												setFilters((prev) => ({
+													...prev,
+													cursor: data.previousCursor,
+												}))
+											}
+											disabled={isLoading || !data.previousCursor}
+											className='flex items-center gap-1'
+										>
+											<ChevronLeft className='h-4 w-4' />
+											Previous
+										</Button>
+									)}
+
+									{data.nextCursor && (
+										<Button
+											variant='outline'
+											size='sm'
+											onClick={() =>
+												setFilters((prev) => ({
+													...prev,
+													cursor: data.nextCursor,
+												}))
+											}
+											disabled={isLoading || !data.nextCursor}
+											className='flex items-center gap-1'
+										>
+											Next
+											<ChevronRight className='h-4 w-4' />
+										</Button>
+									)}
+								</div>
 							</div>
 						)}
 					</div>

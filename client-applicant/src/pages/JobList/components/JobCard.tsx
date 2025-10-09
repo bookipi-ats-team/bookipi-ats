@@ -10,7 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import JobInfo from './JobInfo';
-import { Job } from '@/types/job';
+import { Job } from '@/types/job.type';
 
 interface JobCardProps {
 	job: Job;
@@ -21,7 +21,7 @@ interface JobCardProps {
 
 const JobCard = ({ job, viewMode, index, onBookmarkToggle }: JobCardProps) => {
 	const handleBookmarkClick = () => {
-		onBookmarkToggle?.(job.id);
+		onBookmarkToggle?.(job._id);
 	};
 
 	if (viewMode === 'card') {
@@ -32,27 +32,27 @@ const JobCard = ({ job, viewMode, index, onBookmarkToggle }: JobCardProps) => {
 						<div className='flex-1'>
 							<CardTitle className='text-xl mb-2'>
 								<Link
-									to={`/jobs/${job.id}`}
+									to={`/jobs/${job._id}`}
 									className='hover:text-primary transition-colors'
 								>
 									{job.title}
 								</Link>
 							</CardTitle>
 							<CardDescription className='text-base'>
-								{job.company}
+								{job.industry && (
+									<span className='text-sm text-muted-foreground'>
+										{job.industry}
+									</span>
+								)}
 							</CardDescription>
 						</div>
 						<Button
 							variant='ghost'
 							size='icon'
 							onClick={handleBookmarkClick}
-							className={`transition-transform duration-200 hover:scale-110 ${
-								job.bookmarked ? 'text-primary' : ''
-							}`}
+							className='transition-transform duration-200 hover:scale-110'
 						>
-							<Bookmark
-								className={`h-5 w-5 ${job.bookmarked ? 'fill-current' : ''}`}
-							/>
+							<Bookmark className='h-5 w-5' />
 						</Button>
 					</div>
 				</CardHeader>
@@ -63,15 +63,17 @@ const JobCard = ({ job, viewMode, index, onBookmarkToggle }: JobCardProps) => {
 
 					<JobInfo
 						location={job.location}
-						type={job.type}
-						salary={job.salary}
+						employmentType={job.employmentType}
+						publishedAt={job.publishedAt}
 						className='mb-4'
 					/>
 
-					<div className='flex justify-between items-center'>
-						<Badge variant='secondary'>{job.posted}</Badge>
-						<Link to={`/jobs/${job.id}`}>
-							<Button className='bg-gradient-primary hover:opacity-90 transition-transform duration-200 hover:scale-105'>
+					<div className='flex justify-end items-center'>
+						<Link to={`/jobs/${job._id}`}>
+							<Button
+								variant='ghost'
+								className='text-primary hover:text-white transition-transform duration-200 hover:scale-105'
+							>
 								View Details
 							</Button>
 						</Link>
@@ -90,43 +92,43 @@ const JobCard = ({ job, viewMode, index, onBookmarkToggle }: JobCardProps) => {
 						<div className='flex items-start justify-between gap-4'>
 							<div className='flex-1'>
 								<Link
-									to={`/jobs/${job.id}`}
+									to={`/jobs/${job._id}`}
 									className='hover:text-primary transition-colors'
 								>
 									<h3 className='font-semibold text-lg'>{job.title}</h3>
 								</Link>
-								<p className='text-sm text-muted-foreground'>{job.company}</p>
+								{job.industry && (
+									<p className='text-sm text-muted-foreground'>
+										{job.industry}
+									</p>
+								)}
 							</div>
 							<Button
 								variant='ghost'
 								size='icon'
 								onClick={handleBookmarkClick}
-								className={`transition-transform duration-200 hover:scale-110 ${
-									job.bookmarked ? 'text-primary' : ''
-								}`}
+								className='transition-transform duration-200 hover:scale-110'
 							>
-								<Bookmark
-									className={`h-4 w-4 ${job.bookmarked ? 'fill-current' : ''}`}
-								/>
+								<Bookmark className='h-4 w-4' />
 							</Button>
 						</div>
 
 						<div className='flex flex-wrap gap-3 text-sm text-muted-foreground items-center'>
 							<JobInfo
 								location={job.location}
-								type={job.type}
-								salary={job.salary}
+								employmentType={job.employmentType}
+								publishedAt={job.publishedAt}
 								size='sm'
 							/>
-							<Badge variant='secondary' className='text-xs'>
-								{job.posted}
-							</Badge>
 						</div>
 					</div>
 
 					<div className='flex items-center md:items-start'>
-						<Link to={`/jobs/${job.id}`}>
-							<Button className='bg-gradient-primary hover:opacity-90 transition-transform duration-200 hover:scale-105'>
+						<Link to={`/jobs/${job._id}`}>
+							<Button
+								variant='ghost'
+								className='text-primary hover:text-white transition-transform duration-200 hover:scale-105'
+							>
 								View Details
 							</Button>
 						</Link>

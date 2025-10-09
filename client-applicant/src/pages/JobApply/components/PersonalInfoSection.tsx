@@ -1,17 +1,26 @@
+import { UseFormRegister, FieldErrors } from 'react-hook-form';
 import { FormField } from './FormField';
+import { JobApplicationFormData } from '@/schemas/job-application-schema';
 
-export const PersonalInfoSection = () => {
+interface PersonalInfoSectionProps {
+	register: UseFormRegister<JobApplicationFormData>;
+	errors: FieldErrors<JobApplicationFormData>;
+}
+
+export const PersonalInfoSection = ({
+	register,
+	errors,
+}: PersonalInfoSectionProps) => {
 	return (
 		<>
-			<div className='grid md:grid-cols-2 gap-4'>
-				<FormField
-					id='firstName'
-					label='First Name'
-					required
-					placeholder='John'
-				/>
-				<FormField id='lastName' label='Last Name' required placeholder='Doe' />
-			</div>
+			<FormField
+				id='name'
+				label='Full Name'
+				required
+				placeholder='John Doe'
+				error={errors.name?.message}
+				{...register('name')}
+			/>
 
 			<FormField
 				id='email'
@@ -19,6 +28,8 @@ export const PersonalInfoSection = () => {
 				type='email'
 				required
 				placeholder='john.doe@example.com'
+				error={errors.email?.message}
+				{...register('email')}
 			/>
 
 			<FormField
@@ -27,6 +38,8 @@ export const PersonalInfoSection = () => {
 				type='tel'
 				required
 				placeholder='+1 (555) 123-4567'
+				error={errors.phone?.message}
+				{...register('phone')}
 			/>
 
 			<FormField
@@ -34,6 +47,8 @@ export const PersonalInfoSection = () => {
 				label='Current Location'
 				required
 				placeholder='San Francisco, CA'
+				error={errors.location?.message}
+				{...register('location')}
 			/>
 		</>
 	);
