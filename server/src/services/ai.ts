@@ -215,9 +215,9 @@ const industryMustHaveHints: Record<string, string[]> = {
 };
 
 const genericMustHaves: string[] = [
-  "Ability to communicate clearly with cross-functional partners",
-  "Comfortable working in a fast-paced, ambiguous environment",
-  "Organized and proactive with follow-through",
+  "3+ years delivering measurable outcomes in similar roles",
+  "Hands-on proficiency with the core tools and platforms used in this function",
+  "Ability to translate data and insights into informed decisions",
 ];
 
 const jobTitleResponseSchema = z.object({
@@ -470,6 +470,7 @@ const buildMustHaveMessages = (body: SuggestMustHavesBody, fallback: string[]): 
     `Job title: ${body.jobTitle}`,
     `Industry: ${body.industry ?? "(unspecified)"}`,
     `Seniority: ${body.seniority ?? "(unspecified)"}`,
+    "Focus: Prioritize concrete skills, certifications, tools, and quantifiable experience. Avoid soft-skill-only statements.",
     `Fallback must-haves: ${fallback.join("; ")}`,
   ];
 
@@ -477,7 +478,7 @@ const buildMustHaveMessages = (body: SuggestMustHavesBody, fallback: string[]): 
     {
       role: "system",
       content:
-        "You write laser-focused hiring requirements. Return JSON {\"items\": [\"requirement\", ...]} with 4-6 action-oriented, succinct bullet statements. Reference the role, emphasize impact, avoid redundancy.",
+        "You write laser-focused hiring requirements. Return JSON {\"items\": [\"requirement\", ...]} with 4-6 action-oriented, succinct bullet statements that highlight specific skills, certifications, technologies, or quantifiable years of experience. Reference the role, use measurable language (e.g., \"5+ years\", \"Certified\"), and avoid generic soft skills.",
     },
     {
       role: "user",
