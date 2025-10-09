@@ -80,7 +80,7 @@ Create a `.env` file if you need to override defaults. The server logs the activ
 - `PATCH /business/:id` body `{ name?, description?, industry? }` → `200 OK Business`
 
 ### Jobs
-- `GET /jobs?businessId=&status=&q=&location=&industry=&cursor=&limit=` → `200 OK { items: Job[], nextCursor? }`
+- `GET /jobs?businessId=&status=&q=&location=&industry=&employmentType=&publishedAfter=&cursor=&limit=` → `200 OK { items: Job[], nextCursor? }`
 - `POST /jobs` body `{ businessId, title, description, mustHaves[]?, location?, employmentType, industry? }` → `200 OK Job`
 - `GET /jobs/:id` → `200 OK Job`
 - `PATCH /jobs/:id` body `{ title?, description?, mustHaves[]?, location?, employmentType, industry?, status? }` → `200 OK Job`

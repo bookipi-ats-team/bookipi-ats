@@ -69,6 +69,13 @@ export const getJobsQuerySchema = z.object({
   location: optionalString,
   industry: optionalString,
   employmentType: employmentTypeEnum.optional(),
+  publishedAfter: singleStringValue
+    .transform((value) => {
+      if (!value) return undefined;
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? undefined : date;
+    })
+    .optional(),
   cursor: optionalString,
   limit: singleStringValue
     .transform((value) => {
