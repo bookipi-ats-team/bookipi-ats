@@ -16,3 +16,4 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-lock.yaml
 yarn.lock
+credentials.json
