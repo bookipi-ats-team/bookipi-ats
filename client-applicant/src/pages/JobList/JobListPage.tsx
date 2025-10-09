@@ -55,10 +55,11 @@ const JobList = () => {
 					<div className='flex-1 space-y-6'>
 						{/* Results Header */}
 						<div
-							className='flex justify-end items-center '
+							className='flex justify-end items-center'
 							style={{ animationDelay: '100ms' }}
 						>
 							<ToggleGroup
+								className='hidden md:block'
 								type='single'
 								value={viewMode}
 								onValueChange={(value) =>
@@ -86,7 +87,9 @@ const JobList = () => {
 						) : (
 							<div
 								className={
-									viewMode === 'card' ? 'grid grid-cols-2 gap-4' : 'space-y-3'
+									viewMode === 'card'
+										? 'grid md:grid-cols-2 gap-4'
+										: 'space-y-3'
 								}
 							>
 								{data?.items.map((job, index) => (

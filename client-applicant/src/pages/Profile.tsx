@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import BottomNav from '@/components/BottomNav';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,9 +22,12 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useUserStore } from '@/store/user.store';
 
 const Profile = () => {
 	const { toast } = useToast();
+	const navigate = useNavigate();
+	const { logout, email } = useUserStore();
 	const [activeTab, setActiveTab] = useState('account');
 
 	const handleSave = () => {
@@ -31,6 +35,15 @@ const Profile = () => {
 			title: 'Profile Updated',
 			description: 'Your profile has been successfully updated.',
 		});
+	};
+
+	const handleLogout = () => {
+		logout();
+		toast({
+			title: 'Logged Out',
+			description: 'You have been successfully logged out.',
+		});
+		navigate('/login');
 	};
 
 	return (
@@ -72,8 +85,9 @@ const Profile = () => {
 										<Input
 											id='email'
 											type='email'
-											placeholder='john.doe@example.com'
-											defaultValue='john.doe@example.com'
+											placeholder='your@example.com'
+											defaultValue={email || ''}
+											disabled
 										/>
 									</div>
 									<div className='space-y-2'>
@@ -87,62 +101,11 @@ const Profile = () => {
 									</div>
 								</div>
 
-								<div className='space-y-2'>
-									<Label htmlFor='current-password'>Current Password</Label>
-									<Input id='current-password' type='password' />
-								</div>
-
-								<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-									<div className='space-y-2'>
-										<Label htmlFor='new-password'>New Password</Label>
-										<Input id='new-password' type='password' />
-									</div>
-									<div className='space-y-2'>
-										<Label htmlFor='confirm-password'>Confirm Password</Label>
-										<Input id='confirm-password' type='password' />
-									</div>
-								</div>
-
 								<Button
 									onClick={handleSave}
 									className='w-full md:w-auto transition-transform duration-200 hover:scale-105'
 								>
 									Save Changes
-								</Button>
-							</CardContent>
-						</Card>
-
-						<Card className=' [animation-delay:100ms]'>
-							<CardHeader>
-								<CardTitle>Notification Preferences</CardTitle>
-								<CardDescription>
-									Manage how you receive updates
-								</CardDescription>
-							</CardHeader>
-							<CardContent className='space-y-4'>
-								<div className='flex items-center justify-between'>
-									<div>
-										<p className='font-medium'>Email Notifications</p>
-										<p className='text-sm text-muted-foreground'>
-											Receive job alerts via email
-										</p>
-									</div>
-									<input type='checkbox' defaultChecked className='h-4 w-4' />
-								</div>
-								<div className='flex items-center justify-between'>
-									<div>
-										<p className='font-medium'>Application Updates</p>
-										<p className='text-sm text-muted-foreground'>
-											Get notified about application status changes
-										</p>
-									</div>
-									<input type='checkbox' defaultChecked className='h-4 w-4' />
-								</div>
-								<Button
-									onClick={handleSave}
-									className='w-full md:w-auto transition-transform duration-200 hover:scale-105'
-								>
-									Save Preferences
 								</Button>
 							</CardContent>
 						</Card>
@@ -284,6 +247,22 @@ const Profile = () => {
 						</Card>
 					</TabsContent>
 				</Tabs>
+
+				{/* Logout Section */}
+				<Card className='mt-8'>
+					<CardHeader>
+						<CardTitle>Account Actions</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<Button
+							onClick={handleLogout}
+							variant='destructive'
+							className='w-full md:w-auto'
+						>
+							Logout
+						</Button>
+					</CardContent>
+				</Card>
 			</div>
 
 			<BottomNav />

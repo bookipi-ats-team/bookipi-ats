@@ -8,6 +8,7 @@ import JobApplySuccess from '@/pages/JobApplySuccess';
 import MyApplications from '@/pages/MyApplications';
 import Login from '@/pages/Login';
 import Profile from '@/pages/Profile';
+import AuthGuard from '@/routes/AuthGuard';
 import { AnimatePresence } from 'framer-motion';
 import { TransitionType } from '@/constant/transitions';
 import Transition from '@/components/Transition';
@@ -18,6 +19,7 @@ type RouteType = {
 	icon?: string;
 	element: JSX.Element;
 	transition?: TransitionType;
+	requiresAuth?: boolean;
 };
 
 const APP_ROUTE_LIST: RouteType[] = [
@@ -32,26 +34,32 @@ const APP_ROUTE_LIST: RouteType[] = [
 	{
 		path: '/profile',
 		element: <Profile />,
+		requiresAuth: true,
 	},
 	{
 		path: '/jobs',
 		element: <JobList />,
+		requiresAuth: true,
 	},
 	{
 		path: '/jobs/:id',
 		element: <JobDetail />,
+		requiresAuth: true,
 	},
 	{
 		path: '/jobs/:id/apply',
 		element: <JobApply />,
+		requiresAuth: true,
 	},
 	{
 		path: '/jobs/apply/success',
 		element: <JobApplySuccess />,
+		requiresAuth: true,
 	},
 	{
 		path: '/my-applications',
 		element: <MyApplications />,
+		requiresAuth: true,
 	},
 ];
 
@@ -67,7 +75,11 @@ const AppRoutes = () => {
 							path={route.path}
 							element={
 								<Transition className='h-full w-full' type='fade'>
-									{route.element}
+									{route.requiresAuth ? (
+										<AuthGuard>{route.element}</AuthGuard>
+									) : (
+										route.element
+									)}
 								</Transition>
 							}
 						/>

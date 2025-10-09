@@ -1,9 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Briefcase, FileText, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useUserStore } from '@/store/user.store';
 
 const Navbar = () => {
 	const location = useLocation();
+	const { isAuthenticated } = useUserStore();
 
 	const isActive = (path: string) => location.pathname === path;
 
@@ -43,14 +45,11 @@ const Navbar = () => {
 						>
 							My Applications
 						</Link>
-						<Link to='/profile' className='hidden md:block'>
+						<Link
+							to={isAuthenticated ? '/profile' : '/login'}
+							className='hidden md:block'
+						>
 							<Button variant='outline' size='sm' className='gap-2'>
-								<User className='h-4 w-4' />
-								Profile
-							</Button>
-						</Link>
-						<Link to='/login' className='md:hidden'>
-							<Button variant='outline' size='icon'>
 								<User className='h-4 w-4' />
 							</Button>
 						</Link>
