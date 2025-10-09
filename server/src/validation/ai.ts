@@ -48,10 +48,24 @@ export const scoreResumeApplicationBodySchema = z.object({
 
 export type ScoreResumeApplicationBody = z.infer<typeof scoreResumeApplicationBodySchema>;
 
-export const scoreResumeInlineBodySchema = z.object({
-  resumeFileId: objectIdString,
-  job: jobContextSchema,
-});
+export const scoreResumeInlineBodySchema = z
+  .object({
+    resumeFileId: optionalObjectIdString,
+    resumeText: z
+      .string()
+      .trim()
+      .min(40, "Resume text must be at least 40 characters")
+      .max(12_000, "Resume text is too long")
+      .optional(),
+    job: jobContextSchema,
+  })
+  .refine(
+    (value) => Boolean(value.resumeFileId || value.resumeText),
+    {
+      message: "Provide resumeFileId or resumeText",
+      path: ["resumeFileId"],
+    },
+  );
 
 export type ScoreResumeInlineBody = z.infer<typeof scoreResumeInlineBodySchema>;
 

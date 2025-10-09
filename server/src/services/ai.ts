@@ -10,8 +10,11 @@ import type { IApplication } from "../models/Application.js";
 import type { IJob } from "../models/Job.js";
 import { Application } from "../models/Application.js";
 import { Job } from "../models/Job.js";
+import type { IResumeFile } from "../models/ResumeFile.js";
+import { ResumeFile } from "../models/ResumeFile.js";
 import type { ChatMessage } from "./openaiClient.js";
 import { chatCompletionJson } from "./openaiClient.js";
+import { createResumeSummary, normalizeResumeText } from "./resumeParser.js";
 
 export type SuggestionSource = "AI" | "STATIC";
 
@@ -34,6 +37,33 @@ interface JobContext {
   mustHaves: string[];
   description?: string;
 }
+
+interface ResumePromptData {
+  text: string;
+  summary: string;
+}
+
+export type ScoreResumeReadyResult = {
+  status: "ready";
+  score: number;
+  cvScore: number;
+  cvTips: string[];
+};
+
+export type ScoreResumePendingResult = {
+  status: "pending";
+  message: string;
+};
+
+export type ScoreResumeFailedResult = {
+  status: "failed";
+  message: string;
+};
+
+export type ScoreResumeResult =
+  | ScoreResumeReadyResult
+  | ScoreResumePendingResult
+  | ScoreResumeFailedResult;
 
 const industryJobTitleMap: Record<string, string[]> = {
   technology: [
@@ -257,32 +287,40 @@ const maybeEnhanceForSeniority = (mustHaves: string[], seniority?: string): stri
   return mustHaves;
 };
 
-const buildJobContextFromApplication = async (
+const buildApplicationContext = async (
   body: ScoreResumeApplicationBody,
-): Promise<JobContext | undefined> => {
+): Promise<{ jobContext?: JobContext; resumeFile?: IResumeFile | null }> => {
   try {
     const application = await Application.findById(body.applicationId)
       .lean<IApplication>()
       .exec();
 
     if (!application) {
-      return undefined;
+      return {};
     }
 
-    const job = await Job.findById(application.jobId).lean<IJob>().exec();
+    const [job, resumeFile] = await Promise.all([
+      Job.findById(application.jobId).lean<IJob>().exec(),
+      application.resumeFileId
+        ? ResumeFile.findById(application.resumeFileId).lean<IResumeFile>().exec()
+        : Promise.resolve(null),
+    ]);
 
-    if (!job) {
-      return undefined;
-    }
+    const jobContext = job
+      ? {
+          title: job.title,
+          mustHaves: job.mustHaves ?? [],
+          description: job.description,
+        }
+      : undefined;
 
     return {
-      title: job.title,
-      mustHaves: job.mustHaves ?? [],
-      description: job.description,
+      jobContext,
+      resumeFile,
     };
   } catch (error) {
-    console.error("Failed to hydrate job context from application", error);
-    return undefined;
+    console.error("Failed to hydrate application context", error);
+    return {};
   }
 };
 
@@ -295,6 +333,72 @@ const fallbackJobContext = (job: JobContext | undefined, titleHint?: string): Jo
     title: titleHint ?? "Role",
     mustHaves: job?.mustHaves ?? genericMustHaves,
     description: job?.description,
+  };
+};
+
+const buildResumePromptData = (text: string, summary?: string): ResumePromptData => ({
+  text,
+  summary: summary && summary.trim().length > 0 ? summary : createResumeSummary(text),
+});
+
+type ResumeResolution =
+  | { status: "ready"; data: ResumePromptData }
+  | { status: "pending"; message: string }
+  | { status: "failed"; message: string };
+
+const resolveResumeFromFile = (resumeFile?: IResumeFile | null): ResumeResolution => {
+  if (!resumeFile) {
+    return {
+      status: "failed",
+      message: "Resume file could not be found.",
+    };
+  }
+
+  const status = resumeFile.parseStatus ?? "pending";
+
+  if (status === "ready") {
+    const text = resumeFile.parsedText?.trim();
+
+    if (!text) {
+      return {
+        status: "failed",
+        message: "Parsed resume text is unavailable.",
+      };
+    }
+
+    return {
+      status: "ready",
+      data: buildResumePromptData(text, resumeFile.parsedSummary ?? undefined),
+    };
+  }
+
+  if (status === "pending" || status === "processing") {
+    return {
+      status: "pending",
+      message: "Resume is still being processed. Please try again shortly.",
+    };
+  }
+
+  return {
+    status: "failed",
+    message: resumeFile.parseError?.trim()
+      || "Resume parsing failed. Please re-upload the resume.",
+  };
+};
+
+const resolveResumeFromInlineText = (resumeText: string): ResumeResolution => {
+  const normalized = normalizeResumeText(resumeText);
+
+  if (normalized.length < 40) {
+    return {
+      status: "failed",
+      message: "Resume text is too short to score.",
+    };
+  }
+
+  return {
+    status: "ready",
+    data: buildResumePromptData(normalized),
   };
 };
 
@@ -405,6 +509,7 @@ const buildJobDescriptionMessages = (
 
 const buildScoreResumeMessages = (
   context: JobContext,
+  resume: ResumePromptData,
   fallback: { score: number; cvScore: number; cvTips: string[] },
 ): ChatMessage[] => [
   {
@@ -416,6 +521,7 @@ const buildScoreResumeMessages = (
     role: "user",
     content: JSON.stringify({
       job: context,
+      resume,
       fallback,
     }),
   },
@@ -640,31 +746,63 @@ export const generateJobDescription = async (
 export const scoreResume = async (
   body: ScoreResumeApplicationBody | ScoreResumeInlineBody,
   options?: AiServiceOptions,
-): Promise<{ score: number; cvScore: number; cvTips: string[] }> => {
-  let context: JobContext | undefined;
+): Promise<ScoreResumeResult> => {
+  let jobContext: JobContext | undefined;
+  let resumeResolution: ResumeResolution = {
+    status: "failed",
+    message: "Resume content is required to score.",
+  };
+  let titleHint: string | undefined;
 
   if ("applicationId" in body) {
-    context = await buildJobContextFromApplication(body);
+    const { jobContext: hydratedJob, resumeFile } = await buildApplicationContext(body);
+    jobContext = hydratedJob;
+    resumeResolution = resolveResumeFromFile(resumeFile);
   } else {
-    context = {
+    jobContext = {
       title: body.job.title,
       mustHaves: body.job.mustHaves ?? [],
       description: body.job.description,
     };
+    titleHint = body.job.title;
+
+    if (body.resumeText) {
+      resumeResolution = resolveResumeFromInlineText(body.resumeText);
+    } else if (body.resumeFileId) {
+      const resumeFile = await ResumeFile.findById(body.resumeFileId)
+        .lean<IResumeFile>()
+        .exec();
+      resumeResolution = resolveResumeFromFile(resumeFile);
+    }
   }
 
-  const resolvedContext = fallbackJobContext(context, context?.title);
+  const resolvedContext = fallbackJobContext(jobContext, titleHint ?? jobContext?.title);
   const fallbackResult = scoreFromMustHaves(resolvedContext.mustHaves);
 
   if (options?.forceStatic) {
     return {
+      status: "ready",
       score: fallbackResult.score,
       cvScore: fallbackResult.cvScore,
       cvTips: fallbackResult.cvTips,
     };
   }
 
-  const messages = buildScoreResumeMessages(resolvedContext, fallbackResult);
+  if (resumeResolution.status === "pending") {
+    return {
+      status: "pending",
+      message: resumeResolution.message,
+    };
+  }
+
+  if (resumeResolution.status === "failed") {
+    return {
+      status: "failed",
+      message: resumeResolution.message,
+    };
+  }
+
+  const messages = buildScoreResumeMessages(resolvedContext, resumeResolution.data, fallbackResult);
   const result = await chatCompletionJson({
     messages,
     schema: scoreResumeResponseSchema,
@@ -674,9 +812,12 @@ export const scoreResume = async (
 
   if (result.source === "AI" && result.data) {
     return {
+      status: "ready",
       score: result.data.score,
       cvScore: result.data.cvScore,
-      cvTips: result.data.cvTips.map((tip) => tip.trim()).filter((tip) => tip.length > 0),
+      cvTips: result.data.cvTips
+        .map((tip) => tip.trim())
+        .filter((tip) => tip.length > 0),
     };
   }
 
@@ -687,6 +828,7 @@ export const scoreResume = async (
   }
 
   return {
+    status: "ready",
     score: fallbackResult.score,
     cvScore: fallbackResult.cvScore,
     cvTips: fallbackResult.cvTips,

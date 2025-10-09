@@ -100,6 +100,13 @@ export interface UploadDriveFileResult {
   webContentLink?: string;
 }
 
+export interface DownloadDriveFileResult {
+  data: Buffer;
+  mimeType?: string;
+  name?: string;
+  sizeBytes?: number;
+}
+
 export const uploadFileToDrive = async ({
   name,
   data,
@@ -167,6 +174,44 @@ export const uploadFileToDrive = async ({
     sizeBytes: sizeString ? Number(sizeString) : data.byteLength,
     webViewLink,
     webContentLink,
+  };
+};
+
+export const downloadFileFromDrive = async (
+  fileId: string,
+): Promise<DownloadDriveFileResult> => {
+  const drive = await getDriveClient();
+
+  const [metadataResponse, mediaResponse] = await Promise.all([
+    drive.files.get({
+      fileId,
+      fields: "id,name,mimeType,size",
+      supportsAllDrives: true,
+    }),
+    drive.files.get(
+      {
+        fileId,
+        alt: "media",
+        supportsAllDrives: true,
+      },
+      {
+        responseType: "arraybuffer",
+      },
+    ),
+  ]);
+
+  const mediaData = mediaResponse.data;
+  const buffer = Buffer.isBuffer(mediaData)
+    ? mediaData
+    : Buffer.from(mediaData as ArrayBuffer);
+
+  const metadata = metadataResponse.data;
+
+  return {
+    data: buffer,
+    mimeType: metadata.mimeType ?? undefined,
+    name: metadata.name ?? undefined,
+    sizeBytes: metadata.size ? Number(metadata.size) : undefined,
   };
 };
 
