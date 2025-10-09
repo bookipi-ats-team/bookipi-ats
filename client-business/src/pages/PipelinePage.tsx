@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   DndContext,
   DragOverlay,
@@ -9,23 +9,37 @@ import {
   useSensors,
   type DragEndEvent,
   type DragStartEvent,
-} from '@dnd-kit/core';
-import { useJob, useApplications, useMoveApplication, useNotes, useAddNote } from '../hooks';
-import { Button } from '../components/shared/Button';
-import { ScorePill } from '../components/shared/ScorePill';
-import { Spinner } from '../components/shared/Spinner';
-import type { ApplicationStage, ApplicationWithDetails } from '../types';
+} from "@dnd-kit/core";
+import {
+  useJob,
+  useApplications,
+  useMoveApplication,
+  useNotes,
+  useAddNote,
+} from "../hooks";
+import { Button } from "../components/shared/Button";
+import { ScorePill } from "../components/shared/ScorePill";
+import { Spinner } from "../components/shared/Spinner";
+import type { ApplicationStage, ApplicationWithDetails } from "../types";
 
-const STAGES: ApplicationStage[] = ['NEW', 'SCREEN', 'INTERVIEW', 'OFFER', 'HIRED', 'REJECTED'];
+const STAGES: ApplicationStage[] = [
+  "NEW",
+  "SCREEN",
+  "INTERVIEW",
+  "OFFER",
+  "HIRED",
+  "REJECTED",
+];
 
-const STAGE_CONFIG: Record<ApplicationStage, { label: string; color: string }> = {
-  NEW: { label: 'New', color: 'bg-blue-50 border-blue-200' },
-  SCREEN: { label: 'Screening', color: 'bg-purple-50 border-purple-200' },
-  INTERVIEW: { label: 'Interview', color: 'bg-yellow-50 border-yellow-200' },
-  OFFER: { label: 'Offer', color: 'bg-green-50 border-green-200' },
-  HIRED: { label: 'Hired', color: 'bg-emerald-50 border-emerald-200' },
-  REJECTED: { label: 'Rejected', color: 'bg-red-50 border-red-200' },
-};
+const STAGE_CONFIG: Record<ApplicationStage, { label: string; color: string }> =
+  {
+    NEW: { label: "New", color: "bg-blue-50 border-blue-200" },
+    SCREEN: { label: "Screening", color: "bg-purple-50 border-purple-200" },
+    INTERVIEW: { label: "Interview", color: "bg-yellow-50 border-yellow-200" },
+    OFFER: { label: "Offer", color: "bg-green-50 border-green-200" },
+    HIRED: { label: "Hired", color: "bg-emerald-50 border-emerald-200" },
+    REJECTED: { label: "Rejected", color: "bg-red-50 border-red-200" },
+  };
 
 interface ApplicationCardProps {
   application: ApplicationWithDetails;
@@ -33,12 +47,16 @@ interface ApplicationCardProps {
   isDragging?: boolean;
 }
 
-const ApplicationCard: React.FC<ApplicationCardProps> = ({ application, onClick, isDragging = false }) => {
+const ApplicationCard: React.FC<ApplicationCardProps> = ({
+  application,
+  onClick,
+  isDragging = false,
+}) => {
   return (
     <div
       onClick={onClick}
       className={`bg-white border border-border rounded-lg p-3 cursor-pointer hover:shadow-md transition-all ${
-        isDragging ? 'opacity-50' : ''
+        isDragging ? "opacity-50" : ""
       }`}
     >
       <div className="font-medium text-text-primary text-sm mb-1 truncate">
@@ -49,8 +67,12 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ application, onClick,
       </div>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1 flex-wrap">
-          {application.score !== undefined && <ScorePill score={application.score} label="Match" />}
-          {application.cvScore !== undefined && <ScorePill score={application.cvScore} label="CV" />}
+          {application.score !== undefined && (
+            <ScorePill score={application.score} label="Match" />
+          )}
+          {application.cvScore !== undefined && (
+            <ScorePill score={application.cvScore} label="CV" />
+          )}
         </div>
         {application.notesCount > 0 && (
           <span className="text-xs text-text-secondary whitespace-nowrap">
@@ -72,26 +94,44 @@ interface DroppableColumnProps {
   isDragOver?: boolean;
 }
 
-const DroppableColumn: React.FC<DroppableColumnProps> = ({ stage, applications, onCardClick, isDragOver = false }) => {
+const DroppableColumn: React.FC<DroppableColumnProps> = ({
+  stage,
+  applications,
+  onCardClick,
+  isDragOver = false,
+}) => {
   const config = STAGE_CONFIG[stage];
 
   return (
     <div className="flex flex-col h-full min-w-0">
-      <div className={`${config.color} border rounded-xl p-3 mb-3 flex-shrink-0`}>
-        <div className="font-semibold text-sm text-text-primary">{config.label}</div>
-        <div className="text-xs text-text-secondary mt-0.5">{applications.length} applicants</div>
-      </div>
-      <div 
-        className={`flex-1 space-y-2 overflow-y-auto pr-1 min-h-[200px] ${
-          isDragOver ? 'bg-blue-50 rounded-lg' : ''
-        }`}
-        style={{ maxHeight: 'calc(100vh - 280px)' }}
+      <div
+        className={`${config.color} border rounded-xl p-3 mb-3 flex-shrink-0`}
       >
-        {applications.map(app => (
-          <div key={app.id} draggable onDragStart={(e) => {
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('application/json', JSON.stringify({ id: app.id, stage }));
-          }}>
+        <div className="font-semibold text-sm text-text-primary">
+          {config.label}
+        </div>
+        <div className="text-xs text-text-secondary mt-0.5">
+          {applications.length} applicants
+        </div>
+      </div>
+      <div
+        className={`flex-1 space-y-2 overflow-y-auto pr-1 min-h-[200px] ${
+          isDragOver ? "bg-blue-50 rounded-lg" : ""
+        }`}
+        style={{ maxHeight: "calc(100vh - 280px)" }}
+      >
+        {applications.map((app) => (
+          <div
+            key={app._id}
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData(
+                "application/json",
+                JSON.stringify({ id: app._id, stage })
+              );
+            }}
+          >
             <ApplicationCard
               application={app}
               onClick={() => onCardClick(app)}
@@ -114,13 +154,17 @@ export const PipelinePage: React.FC = () => {
   const { data: job } = useJob(jobId!);
   const { data: applicationsData } = useApplications(jobId!);
   const moveApplication = useMoveApplication();
-  
-  const [selectedApp, setSelectedApp] = useState<ApplicationWithDetails | null>(null);
+
+  const [selectedApp, setSelectedApp] = useState<ApplicationWithDetails | null>(
+    null
+  );
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [noteText, setNoteText] = useState('');
-  const [dragOverStage, setDragOverStage] = useState<ApplicationStage | null>(null);
-  
-  const { data: notes } = useNotes(selectedApp?.id || '');
+  const [noteText, setNoteText] = useState("");
+  const [dragOverStage, setDragOverStage] = useState<ApplicationStage | null>(
+    null
+  );
+
+  const { data: notes } = useNotes(selectedApp?._id || "");
   const addNote = useAddNote();
 
   const sensors = useSensors(
@@ -134,7 +178,7 @@ export const PipelinePage: React.FC = () => {
   const applications = applicationsData?.items || [];
 
   const groupedApplications = STAGES.reduce((acc, stage) => {
-    acc[stage] = applications.filter(app => app.stage === stage);
+    acc[stage] = applications.filter((app) => app.stage === stage);
     return acc;
   }, {} as Record<ApplicationStage, ApplicationWithDetails[]>);
 
@@ -160,19 +204,19 @@ export const PipelinePage: React.FC = () => {
 
   const handleAddNote = async () => {
     if (!selectedApp || !noteText.trim()) return;
-    
+
     try {
       await addNote.mutateAsync({
-        applicationId: selectedApp.id,
+        applicationId: selectedApp._id,
         data: { body: noteText },
       });
-      setNoteText('');
+      setNoteText("");
     } catch (error) {
-      console.error('Failed to add note:', error);
+      console.error("Failed to add note:", error);
     }
   };
 
-  const activeApplication = applications.find(app => app.id === activeId);
+  const activeApplication = applications.find((app) => app._id === activeId);
 
   if (!job) {
     return (
@@ -193,8 +237,12 @@ export const PipelinePage: React.FC = () => {
           >
             ← Back to Job
           </button>
-          <h1 className="text-2xl font-semibold text-text-primary">{job.title}</h1>
-          <p className="text-sm text-text-secondary mt-1">Pipeline Management</p>
+          <h1 className="text-2xl font-semibold text-text-primary">
+            {job.title}
+          </h1>
+          <p className="text-sm text-text-secondary mt-1">
+            Pipeline Management
+          </p>
         </div>
 
         <DndContext
@@ -203,15 +251,15 @@ export const PipelinePage: React.FC = () => {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div 
+          <div
             className="grid gap-4 flex-1 overflow-x-auto pb-4"
-            style={{ 
-              gridTemplateColumns: 'repeat(6, minmax(220px, 1fr))',
+            style={{
+              gridTemplateColumns: "repeat(6, minmax(220px, 1fr))",
             }}
           >
-            {STAGES.map(stage => (
-              <div 
-                key={stage} 
+            {STAGES.map((stage) => (
+              <div
+                key={stage}
                 id={stage}
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -220,7 +268,7 @@ export const PipelinePage: React.FC = () => {
                 onDragLeave={() => setDragOverStage(null)}
                 onDrop={(e) => {
                   e.preventDefault();
-                  const data = e.dataTransfer.getData('application/json');
+                  const data = e.dataTransfer.getData("application/json");
                   if (data) {
                     const { id } = JSON.parse(data);
                     moveApplication.mutate({
@@ -270,26 +318,36 @@ export const PipelinePage: React.FC = () => {
           <div className="p-3 space-y-3">
             {/* Applicant Info */}
             <div className="bg-white rounded-lg p-3 border border-border">
-              <h3 className="font-semibold text-text-primary text-xs mb-2">Applicant</h3>
+              <h3 className="font-semibold text-text-primary text-xs mb-2">
+                Applicant
+              </h3>
               <div className="space-y-2 text-xs">
                 <div>
                   <div className="text-text-secondary">Name</div>
-                  <div className="text-text-primary font-medium">{selectedApp.applicant.name}</div>
+                  <div className="text-text-primary font-medium">
+                    {selectedApp.applicant.name}
+                  </div>
                 </div>
                 <div>
                   <div className="text-text-secondary">Email</div>
-                  <div className="text-text-primary break-all">{selectedApp.applicant.email}</div>
+                  <div className="text-text-primary break-all">
+                    {selectedApp.applicant.email}
+                  </div>
                 </div>
                 {selectedApp.applicant.phone && (
                   <div>
                     <div className="text-text-secondary">Phone</div>
-                    <div className="text-text-primary">{selectedApp.applicant.phone}</div>
+                    <div className="text-text-primary">
+                      {selectedApp.applicant.phone}
+                    </div>
                   </div>
                 )}
                 {selectedApp.applicant.location && (
                   <div>
                     <div className="text-text-secondary">Location</div>
-                    <div className="text-text-primary">{selectedApp.applicant.location}</div>
+                    <div className="text-text-primary">
+                      {selectedApp.applicant.location}
+                    </div>
                   </div>
                 )}
               </div>
@@ -297,7 +355,9 @@ export const PipelinePage: React.FC = () => {
 
             {/* Scores */}
             <div className="bg-white rounded-lg p-3 border border-border">
-              <h3 className="font-semibold text-text-primary text-xs mb-2">Scores</h3>
+              <h3 className="font-semibold text-text-primary text-xs mb-2">
+                Scores
+              </h3>
               <div className="flex gap-2 flex-wrap">
                 {selectedApp.score !== undefined && (
                   <ScorePill score={selectedApp.score} label="Job Match" />
@@ -308,10 +368,15 @@ export const PipelinePage: React.FC = () => {
               </div>
               {selectedApp.cvTips && selectedApp.cvTips.length > 0 && (
                 <div className="mt-2">
-                  <div className="text-xs text-text-secondary mb-1">CV Tips</div>
+                  <div className="text-xs text-text-secondary mb-1">
+                    CV Tips
+                  </div>
                   <ul className="space-y-1">
                     {selectedApp.cvTips.map((tip, idx) => (
-                      <li key={idx} className="text-xs text-text-secondary leading-tight">
+                      <li
+                        key={idx}
+                        className="text-xs text-text-secondary leading-tight"
+                      >
                         • {tip}
                       </li>
                     ))}
@@ -325,11 +390,13 @@ export const PipelinePage: React.FC = () => {
               <h3 className="font-semibold text-text-primary text-xs mb-2">
                 Notes ({notes?.length || 0})
               </h3>
-              
+
               <div className="space-y-2 mb-3 max-h-48 overflow-y-auto">
-                {notes?.map(note => (
-                  <div key={note.id} className="bg-gray-50 rounded p-2">
-                    <div className="text-xs text-text-primary whitespace-pre-wrap break-words">{note.body}</div>
+                {notes?.map((note) => (
+                  <div key={note._id} className="bg-gray-50 rounded p-2">
+                    <div className="text-xs text-text-primary whitespace-pre-wrap break-words">
+                      {note.body}
+                    </div>
                     <div className="text-[10px] text-text-secondary mt-1">
                       {new Date(note.createdAt).toLocaleString()}
                     </div>

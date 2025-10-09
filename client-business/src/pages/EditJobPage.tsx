@@ -1,10 +1,17 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useJob, useUpdateJob, useAISuggestTitles, useAISuggestMustHaves, useAIGenerateJD, useBusiness } from '../hooks';
-import { Button } from '../components/shared/Button';
-import { Spinner } from '../components/shared/Spinner';
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  useJob,
+  useUpdateJob,
+  useAISuggestTitles,
+  useAISuggestMustHaves,
+  useAIGenerateJD,
+  useBusiness,
+} from "../hooks";
+import { Button } from "../components/shared/Button";
+import { Spinner } from "../components/shared/Spinner";
 import { CANONICAL_INDUSTRIES } from '../utils/industry';
-import type { EmploymentType } from '../types';
+import type { EmploymentType } from "../types";
 
 export const EditJobPage: React.FC = () => {
   const { jobId } = useParams<{ jobId: string }>();
@@ -17,16 +24,16 @@ export const EditJobPage: React.FC = () => {
   const generateJD = useAIGenerateJD();
 
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     mustHaves: [] as string[],
-    location: '',
-    employmentType: 'FULL_TIME' as EmploymentType,
-    industry: '',
+    location: "",
+    employmentType: "FULL_TIME" as EmploymentType,
+    industry: "",
   });
 
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
-  const [mustHaveInput, setMustHaveInput] = useState('');
+  const [mustHaveInput, setMustHaveInput] = useState("");
   const [mustHaveSuggestions, setMustHaveSuggestions] = useState<string[]>([]);
 
   // Initialize form with job data
@@ -36,9 +43,9 @@ export const EditJobPage: React.FC = () => {
         title: job.title,
         description: job.description,
         mustHaves: job.mustHaves,
-        location: job.location || '',
+        location: job.location || "",
         employmentType: job.employmentType,
-        industry: job.industry || '',
+        industry: job.industry || "",
       });
     }
   }, [job]);
@@ -47,13 +54,13 @@ export const EditJobPage: React.FC = () => {
     if (!business) return;
     try {
       const result = await suggestTitles.mutateAsync({
-        businessId: business.id,
+        businessId: business._id,
         industry: business.industry,
         description: business.description,
       });
       setTitleSuggestions(result.items);
     } catch (error) {
-      console.error('Failed to get title suggestions:', error);
+      console.error("Failed to get title suggestions:", error);
     }
   };
 
@@ -66,7 +73,7 @@ export const EditJobPage: React.FC = () => {
       });
       setMustHaveSuggestions(result.items);
     } catch (error) {
-      console.error('Failed to get must-have suggestions:', error);
+      console.error("Failed to get must-have suggestions:", error);
     }
   };
 
@@ -82,23 +89,26 @@ export const EditJobPage: React.FC = () => {
           industry: business.industry,
         },
       });
-      setFormData(prev => ({ ...prev, description: result.text }));
+      setFormData((prev) => ({ ...prev, description: result.text }));
     } catch (error) {
-      console.error('Failed to generate JD:', error);
+      console.error("Failed to generate JD:", error);
     }
   };
 
   const handleAddMustHave = (value: string) => {
     if (value && !formData.mustHaves.includes(value)) {
-      setFormData(prev => ({ ...prev, mustHaves: [...prev.mustHaves, value] }));
-      setMustHaveInput('');
+      setFormData((prev) => ({
+        ...prev,
+        mustHaves: [...prev.mustHaves, value],
+      }));
+      setMustHaveInput("");
     }
   };
 
   const handleRemoveMustHave = (value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      mustHaves: prev.mustHaves.filter(item => item !== value),
+      mustHaves: prev.mustHaves.filter((item) => item !== value),
     }));
   };
 
@@ -113,7 +123,7 @@ export const EditJobPage: React.FC = () => {
       });
       navigate(`/jobs/${jobId}`);
     } catch (error) {
-      console.error('Failed to update job:', error);
+      console.error("Failed to update job:", error);
     }
   };
 
@@ -130,7 +140,7 @@ export const EditJobPage: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <p className="text-text-secondary mb-4">Job not found</p>
-          <Button onClick={() => navigate('/jobs')}>Back to Jobs</Button>
+          <Button onClick={() => navigate("/jobs")}>Back to Jobs</Button>
         </div>
       </div>
     );
@@ -181,7 +191,9 @@ export const EditJobPage: React.FC = () => {
               type="text"
               required
               value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, title: e.target.value }))
+              }
               className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-focus focus:border-primary transition-all"
               placeholder="e.g., Senior Software Engineer"
             />
@@ -192,7 +204,9 @@ export const EditJobPage: React.FC = () => {
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, title: suggestion }))}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, title: suggestion }))
+                    }
                     className="px-3 py-1.5 text-sm bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition-colors"
                   >
                     {suggestion}
@@ -232,7 +246,7 @@ export const EditJobPage: React.FC = () => {
                 value={mustHaveInput}
                 onChange={(e) => setMustHaveInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     e.preventDefault();
                     handleAddMustHave(mustHaveInput);
                   }
@@ -311,7 +325,12 @@ export const EditJobPage: React.FC = () => {
             <textarea
               required
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
               rows={12}
               className="w-full px-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-focus focus:border-primary transition-all resize-none font-mono text-sm"
               placeholder="Enter job description..."
@@ -327,7 +346,9 @@ export const EditJobPage: React.FC = () => {
               <input
                 type="text"
                 value={formData.location}
-                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, location: e.target.value }))
+                }
                 className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-focus focus:border-primary transition-all"
                 placeholder="e.g., Makati, Philippines"
               />
@@ -339,7 +360,12 @@ export const EditJobPage: React.FC = () => {
               </label>
               <select
                 value={formData.employmentType}
-                onChange={(e) => setFormData(prev => ({ ...prev, employmentType: e.target.value as EmploymentType }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    employmentType: e.target.value as EmploymentType,
+                  }))
+                }
                 className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-focus focus:border-primary transition-all"
               >
                 <option value="FULL_TIME">Full-Time</option>
@@ -356,7 +382,9 @@ export const EditJobPage: React.FC = () => {
               </label>
               <select
                 value={formData.industry}
-                onChange={(e) => setFormData(prev => ({ ...prev, industry: e.target.value }))}
+                onChange={(e) =>
+                setFormData((prev) => ({ ...prev, industry: e.target.value }))
+              }
                 className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-focus focus:border-primary transition-all"
               >
                 <option value="">Select an industry</option>

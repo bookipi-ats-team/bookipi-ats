@@ -1,5 +1,18 @@
-import { useQuery, useMutation, useQueryClient, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
-import { authApi, businessApi, jobsApi, applicationsApi, notesApi, aiApi } from '../api';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type UseQueryResult,
+  type UseMutationResult,
+} from "@tanstack/react-query";
+import {
+  authApi,
+  businessApi,
+  jobsApi,
+  applicationsApi,
+  notesApi,
+  aiApi,
+} from "../api";
 import type {
   User,
   Business,
@@ -17,12 +30,12 @@ import type {
   AISuggestionResponse,
   AIGenerateJDResponse,
   PaginatedResponse,
-} from '../types';
+} from "../types";
 
 // Auth hooks
 export const useMe = (): UseQueryResult<User, Error> => {
   return useQuery({
-    queryKey: ['me'],
+    queryKey: ["me"],
     queryFn: authApi.getMe,
   });
 };
@@ -30,13 +43,17 @@ export const useMe = (): UseQueryResult<User, Error> => {
 // Business hooks
 export const useBusiness = (): UseQueryResult<Business, Error> => {
   return useQuery({
-    queryKey: ['business'],
+    queryKey: ["business"],
     queryFn: businessApi.getMy,
     retry: false,
   });
 };
 
-export const useCreateBusiness = (): UseMutationResult<Business, Error, CreateBusinessInput> => {
+export const useCreateBusiness = (): UseMutationResult<
+  Business,
+  Error,
+  CreateBusinessInput
+> => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input) => {
@@ -49,8 +66,8 @@ export const useCreateBusiness = (): UseMutationResult<Business, Error, CreateBu
       return businessApi.create(input, params);
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(['business'], data);
-      queryClient.invalidateQueries({ queryKey: ['me'] });
+      queryClient.setQueryData(["business"], data);
+      queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });
 };
@@ -64,7 +81,7 @@ export const useUpdateBusiness = (): UseMutationResult<
   return useMutation({
     mutationFn: ({ id, data }) => businessApi.update(id, data),
     onSuccess: (data) => {
-      queryClient.setQueryData(['business'], data);
+      queryClient.setQueryData(["business"], data);
     },
   });
 };
@@ -76,25 +93,29 @@ export const useJobs = (params?: {
   q?: string;
 }): UseQueryResult<PaginatedResponse<Job>, Error> => {
   return useQuery({
-    queryKey: ['jobs', params],
+    queryKey: ["jobs", params],
     queryFn: () => jobsApi.getAll(params),
   });
 };
 
 export const useJob = (id: string): UseQueryResult<Job, Error> => {
   return useQuery({
-    queryKey: ['job', id],
+    queryKey: ["job", id],
     queryFn: () => jobsApi.getById(id),
     enabled: !!id,
   });
 };
 
-export const useCreateJob = (): UseMutationResult<Job, Error, CreateJobInput> => {
+export const useCreateJob = (): UseMutationResult<
+  Job,
+  Error,
+  CreateJobInput
+> => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: jobsApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
   });
 };
@@ -108,41 +129,53 @@ export const useUpdateJob = (): UseMutationResult<
   return useMutation({
     mutationFn: ({ id, data }) => jobsApi.update(id, data),
     onSuccess: (data) => {
-      queryClient.setQueryData(['job', data.id], data);
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.setQueryData(["job", data._id], data);
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
   });
 };
 
-export const usePublishJob = (): UseMutationResult<{ status: string }, Error, string> => {
+export const usePublishJob = (): UseMutationResult<
+  { status: string },
+  Error,
+  string
+> => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: jobsApi.publish,
     onSuccess: (_, jobId) => {
-      queryClient.invalidateQueries({ queryKey: ['job', jobId] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ["job", jobId] });
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
   });
 };
 
-export const usePauseJob = (): UseMutationResult<{ status: string }, Error, string> => {
+export const usePauseJob = (): UseMutationResult<
+  { status: string },
+  Error,
+  string
+> => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: jobsApi.pause,
     onSuccess: (_, jobId) => {
-      queryClient.invalidateQueries({ queryKey: ['job', jobId] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ["job", jobId] });
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
   });
 };
 
-export const useCloseJob = (): UseMutationResult<{ status: string }, Error, string> => {
+export const useCloseJob = (): UseMutationResult<
+  { status: string },
+  Error,
+  string
+> => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: jobsApi.close,
     onSuccess: (_, jobId) => {
-      queryClient.invalidateQueries({ queryKey: ['job', jobId] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ["job", jobId] });
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
   });
 };
@@ -153,15 +186,17 @@ export const useApplications = (
   params?: { stage?: string }
 ): UseQueryResult<PaginatedResponse<ApplicationWithDetails>, Error> => {
   return useQuery({
-    queryKey: ['applications', jobId, params],
+    queryKey: ["applications", jobId, params],
     queryFn: () => applicationsApi.getByJob(jobId, params),
     enabled: !!jobId,
   });
 };
 
-export const useApplication = (id: string): UseQueryResult<ApplicationWithDetails, Error> => {
+export const useApplication = (
+  id: string
+): UseQueryResult<ApplicationWithDetails, Error> => {
   return useQuery({
-    queryKey: ['application', id],
+    queryKey: ["application", id],
     queryFn: () => applicationsApi.getById(id),
     enabled: !!id,
   });
@@ -176,16 +211,18 @@ export const useMoveApplication = (): UseMutationResult<
   return useMutation({
     mutationFn: ({ id, data }) => applicationsApi.update(id, data),
     onSuccess: (data) => {
-      queryClient.setQueryData(['application', data.id], data);
-      queryClient.invalidateQueries({ queryKey: ['applications', data.jobId] });
+      queryClient.setQueryData(["application", data._id], data);
+      queryClient.invalidateQueries({ queryKey: ["applications", data.jobId] });
     },
   });
 };
 
 // Notes hooks
-export const useNotes = (applicationId: string): UseQueryResult<Note[], Error> => {
+export const useNotes = (
+  applicationId: string
+): UseQueryResult<Note[], Error> => {
   return useQuery({
-    queryKey: ['notes', applicationId],
+    queryKey: ["notes", applicationId],
     queryFn: () => notesApi.getByApplication(applicationId),
     enabled: !!applicationId,
   });
@@ -198,10 +235,15 @@ export const useAddNote = (): UseMutationResult<
 > => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ applicationId, data }) => notesApi.create(applicationId, data),
+    mutationFn: ({ applicationId, data }) =>
+      notesApi.create(applicationId, data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['notes', variables.applicationId] });
-      queryClient.invalidateQueries({ queryKey: ['application', variables.applicationId] });
+      queryClient.invalidateQueries({
+        queryKey: ["notes", variables.applicationId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["application", variables.applicationId],
+      });
     },
   });
 };

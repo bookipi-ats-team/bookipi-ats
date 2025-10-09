@@ -1,6 +1,6 @@
 // User & Auth
 export interface User {
-  id: string;
+  _id: string;
   email: string;
   name: string;
   role: string;
@@ -9,7 +9,7 @@ export interface User {
 
 // Business
 export interface Business {
-  id: string;
+  _id: string;
   name: string;
   description?: string;
   industry?: string;
@@ -24,11 +24,16 @@ export interface CreateBusinessInput {
 }
 
 // Job
-export type EmploymentType = 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERN' | 'TEMPORARY';
-export type JobStatus = 'DRAFT' | 'PUBLISHED' | 'PAUSED' | 'CLOSED';
+export type EmploymentType =
+  | "FULL_TIME"
+  | "PART_TIME"
+  | "CONTRACT"
+  | "INTERN"
+  | "TEMPORARY";
+export type JobStatus = "DRAFT" | "PUBLISHED" | "PAUSED" | "CLOSED";
 
 export interface Job {
-  id: string;
+  _id: string;
   businessId: string;
   title: string;
   description: string;
@@ -63,7 +68,7 @@ export interface UpdateJobInput {
 
 // Applicant
 export interface Applicant {
-  id: string;
+  _id: string;
   email: string;
   name: string;
   phone?: string;
@@ -72,10 +77,16 @@ export interface Applicant {
 }
 
 // Application
-export type ApplicationStage = 'NEW' | 'SCREEN' | 'INTERVIEW' | 'OFFER' | 'HIRED' | 'REJECTED';
+export type ApplicationStage =
+  | "NEW"
+  | "SCREEN"
+  | "INTERVIEW"
+  | "OFFER"
+  | "HIRED"
+  | "REJECTED";
 
 export interface Application {
-  id: string;
+  _id: string;
   applicantId: string;
   jobId: string;
   businessId: string;
@@ -112,7 +123,7 @@ export interface UpdateApplicationInput {
 
 // Note
 export interface Note {
-  id: string;
+  _id: string;
   applicationId: string;
   authorId: string;
   body: string;
@@ -125,7 +136,7 @@ export interface CreateNoteInput {
 
 // Resume File
 export interface ResumeFile {
-  id: string;
+  _id: string;
   applicantId: string;
   jobId?: string;
   url: string;
@@ -180,7 +191,7 @@ export interface AIGenerateJDInput {
 
 export interface AISuggestionResponse {
   items: string[];
-  source: 'AI' | 'STATIC';
+  source: "AI" | "STATIC";
 }
 
 export interface AIGenerateJDResponse {

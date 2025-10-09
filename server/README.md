@@ -17,8 +17,17 @@ Environment variables:
 - `PORT` (default `3000`)
 - `NODE_ENV` (default `development`)
 - `MONGODB_URI` (optional) – MongoDB connection string; if omitted, the server boots without a database connection and logs a warning
+- `OPENAI_API_KEY` (optional) – enables AI-backed suggestions; when missing, all AI endpoints return deterministic static fallbacks
+- `GOOGLE_DRIVE_CREDENTIALS_PATH` (default `./credentials.json`) – path to the Google service account JSON used for Drive access
+- `GOOGLE_DRIVE_FOLDER_ID` (required) – Drive folder where finalized resume files are stored
 
 Create a `.env` file if you need to override defaults. The server logs the active port and environment on boot.
+
+### Resume Storage (Google Drive)
+- Place your Google Cloud service account JSON key outside of version control. Reference it via `GOOGLE_DRIVE_CREDENTIALS_PATH` (defaults to `./credentials.json`).
+- Share the target Drive folder with the service account email and set `GOOGLE_DRIVE_FOLDER_ID` to that folder's ID (`1k8Os2R9oUauuGVreY-pV0aIuWiXqmqsz` in development).
+- Resume uploads are staged locally under `uploads/resumes/tmp` and pushed to Drive during confirmation; successful confirmations store the Drive file ID in `storagePath` and return the public Drive URL.
+- If a confirmation fails after upload, the API attempts to delete the Drive file and leaves the temp upload cleaned up.
 
 ## MVP Scope & Principles
 
@@ -72,9 +81,9 @@ Create a `.env` file if you need to override defaults. The server logs the activ
 
 ### Jobs
 - `GET /jobs?businessId=&status=&q=&location=&industry=&cursor=&limit=` → `200 OK { items: Job[], nextCursor? }`
-- `POST /jobs` body `{ businessId, title, description, mustHaves[], location?, employmentType?, industry? }` → `200 OK Job`
+- `POST /jobs` body `{ businessId, title, description, mustHaves[]?, location?, employmentType, industry? }` → `200 OK Job`
 - `GET /jobs/:id` → `200 OK Job`
-- `PATCH /jobs/:id` body `{ title?, description?, mustHaves?, location?, employmentType?, industry?, status? }` → `200 OK Job`
+- `PATCH /jobs/:id` body `{ title?, description?, mustHaves[]?, location?, employmentType, industry?, status? }` → `200 OK Job`
 - `POST /jobs/:id/publish` → `200 OK { status: "PUBLISHED" }`
 - `POST /jobs/:id/pause` → `200 OK { status: "PAUSED" }`
 - `POST /jobs/:id/close` → `200 OK { status: "CLOSED" }`
@@ -95,11 +104,18 @@ Create a `.env` file if you need to override defaults. The server logs the activ
 - `POST /files/resume/sign` body `{ mimeType, sizeBytes }` → `200 OK { uploadUrl, fileId }`
 - `POST /files/resume/confirm` body `{ fileId, applicantId?, jobId?, originalName, mimeType, sizeBytes }` → `200 OK ResumeFile` (triggers async parsing/scoring)
 
-### AI Services (Stubbed for MVP)
+### AI Services
 - `POST /ai/suggest-job-titles` body `{ businessId?, industry?, description? }` → `200 OK { items: string[], source: "AI" | "STATIC" }`
-- `POST /ai/suggest-must-haves` body `{ jobTitle, industry?, seniority? }` → `200 OK { items: string[], source }`
-- `POST /ai/generate-jd` body `{ jobTitle, mustHaves[], business: { name, description?, industry? }, extras? }` → `200 OK { text }`
+- `POST /ai/suggest-must-haves` body `{ jobTitle, industry?, seniority? }` → `200 OK { items: string[], source: "AI" | "STATIC" }`
+- `POST /ai/generate-jd` body `{ jobTitle, mustHaves[], business: { name, description?, industry? }, extras? }` → `200 OK { text, source: "AI" | "STATIC" }`
 - `POST /ai/score-resume` body `{ applicationId | { resumeFileId, job: { title, mustHaves[], description } } }` → `200 OK { score, cvScore, cvTips: string[] }`
+
+When `OPENAI_API_KEY` is present the service invokes OpenAI's `gpt-4o-mini` for contextual responses; otherwise deterministic fallbacks are returned with `source: "STATIC"`. Append `?mode=static` to any AI endpoint to explicitly bypass the OpenAI call.
+
+#### AI Testing Notes
+- Without an API key the responses are deterministic and tagged `"STATIC"`.
+- Provide `OPENAI_API_KEY` to exercise live completions.
+- Include `?mode=static` when you want to skip the OpenAI call during smoke tests.
 
 ### Public (Applicant-Facing)
 - `GET /public/jobs?q=&location=&industry=&employmentType=&cursor=&limit=` → `200 OK { items: Job[], nextCursor? }` (only `PUBLISHED` jobs)
@@ -120,9 +136,10 @@ type Job = {
   description: string;
   mustHaves: string[];
   location?: string;
-  employmentType?: EmploymentType;
+  employmentType: EmploymentType;
   industry?: string;
   status: 'DRAFT' | 'PUBLISHED' | 'PAUSED' | 'CLOSED';
+  publishedAt?: string;
   createdAt: string;
   updatedAt: string;
 };

@@ -1,38 +1,44 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useJobs, usePublishJob, usePauseJob, useCloseJob } from '../hooks';
-import { Button } from '../components/shared/Button';
-import { SearchInput } from '../components/shared/SearchInput';
-import { StatusBadge } from '../components/shared/StatusBadge';
-import { Spinner } from '../components/shared/Spinner';
-import type { JobStatus } from '../types';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useJobs, usePublishJob, usePauseJob, useCloseJob } from "../hooks";
+import { Button } from "../components/shared/Button";
+import { SearchInput } from "../components/shared/SearchInput";
+import { StatusBadge } from "../components/shared/StatusBadge";
+import { Spinner } from "../components/shared/Spinner";
+import type { JobStatus } from "../types";
 
 export const JobsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<JobStatus | ''>('');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<JobStatus | "">("");
 
-  const { data, isLoading } = useJobs({ q: search, status: statusFilter || undefined });
+  const { data, isLoading } = useJobs({
+    q: search,
+    status: statusFilter || undefined,
+  });
   const publishJob = usePublishJob();
   const pauseJob = usePauseJob();
   const closeJob = useCloseJob();
 
-  const handleAction = async (jobId: string, action: 'publish' | 'pause' | 'close') => {
+  const handleAction = async (
+    jobId: string,
+    action: "publish" | "pause" | "close"
+  ) => {
     try {
-      if (action === 'publish') await publishJob.mutateAsync(jobId);
-      else if (action === 'pause') await pauseJob.mutateAsync(jobId);
-      else if (action === 'close') await closeJob.mutateAsync(jobId);
+      if (action === "publish") await publishJob.mutateAsync(jobId);
+      else if (action === "pause") await pauseJob.mutateAsync(jobId);
+      else if (action === "close") await closeJob.mutateAsync(jobId);
     } catch (error) {
       console.error(`Failed to ${action} job:`, error);
     }
   };
 
-  const statusFilters: Array<{ value: JobStatus | ''; label: string }> = [
-    { value: '', label: 'All' },
-    { value: 'DRAFT', label: 'Draft' },
-    { value: 'PUBLISHED', label: 'Published' },
-    { value: 'PAUSED', label: 'Paused' },
-    { value: 'CLOSED', label: 'Closed' },
+  const statusFilters: Array<{ value: JobStatus | ""; label: string }> = [
+    { value: "", label: "All" },
+    { value: "DRAFT", label: "Draft" },
+    { value: "PUBLISHED", label: "Published" },
+    { value: "PAUSED", label: "Paused" },
+    { value: "CLOSED", label: "Closed" },
   ];
 
   return (
@@ -46,7 +52,7 @@ export const JobsPage: React.FC = () => {
               Manage your job postings and track applications
             </p>
           </div>
-          <Button onClick={() => navigate('/jobs/new')}>
+          <Button onClick={() => navigate("/jobs/new")}>
             <span className="text-lg">+</span>
             New Job
           </Button>
@@ -67,8 +73,8 @@ export const JobsPage: React.FC = () => {
                 onClick={() => setStatusFilter(filter.value)}
                 className={`px-4 py-2 text-sm font-medium rounded-xl transition-all ${
                   statusFilter === filter.value
-                    ? 'bg-primary text-white'
-                    : 'bg-white border border-border text-text-secondary hover:bg-gray-50'
+                    ? "bg-primary text-white"
+                    : "bg-white border border-border text-text-secondary hover:bg-gray-50"
                 }`}
               >
                 {filter.label}
@@ -109,20 +115,25 @@ export const JobsPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-border">
                 {data?.items.map((job) => (
-                  <tr key={job.id} className="hover:bg-gray-50 transition-colors">
+                  <tr
+                    key={job._id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div>
-                        <div className="font-medium text-text-primary">{job.title}</div>
+                        <div className="font-medium text-text-primary">
+                          {job.title}
+                        </div>
                         <div className="text-sm text-text-secondary mt-0.5">
-                          {job.industry || 'Not specified'}
+                          {job.industry || "Not specified"}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-text-secondary">
-                      {job.location || 'Remote'}
+                      {job.location || "Remote"}
                     </td>
                     <td className="px-6 py-4 text-sm text-text-secondary">
-                      {job.employmentType.replace('_', ' ')}
+                      {job.employmentType.replace("_", " ")}
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={job.status} />
@@ -135,32 +146,32 @@ export const JobsPage: React.FC = () => {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => navigate(`/jobs/${job.id}`)}
+                          onClick={() => navigate(`/jobs/${job._id}`)}
                         >
                           View
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => navigate(`/jobs/${job.id}/pipeline`)}
+                          onClick={() => navigate(`/jobs/${job._id}/pipeline`)}
                         >
                           Pipeline
                         </Button>
-                        {job.status === 'DRAFT' && (
+                        {job.status === "DRAFT" && (
                           <Button
                             size="sm"
                             variant="secondary"
-                            onClick={() => handleAction(job.id, 'publish')}
+                            onClick={() => handleAction(job._id, "publish")}
                             isLoading={publishJob.isPending}
                           >
                             Publish
                           </Button>
                         )}
-                        {job.status === 'PUBLISHED' && (
+                        {job.status === "PUBLISHED" && (
                           <Button
                             size="sm"
                             variant="secondary"
-                            onClick={() => handleAction(job.id, 'pause')}
+                            onClick={() => handleAction(job._id, "pause")}
                             isLoading={pauseJob.isPending}
                           >
                             Pause
@@ -176,7 +187,9 @@ export const JobsPage: React.FC = () => {
             {data?.items.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-text-secondary mb-4">No jobs found</p>
-                <Button onClick={() => navigate('/jobs/new')}>Create your first job</Button>
+                <Button onClick={() => navigate("/jobs/new")}>
+                  Create your first job
+                </Button>
               </div>
             )}
           </div>
