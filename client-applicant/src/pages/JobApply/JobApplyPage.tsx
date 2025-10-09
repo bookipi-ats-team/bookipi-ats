@@ -21,12 +21,14 @@ import {
 	JobApplicationFormData,
 } from '@/schemas/job-application-schema';
 import { useSubmitApplication } from '@/hooks/mutation/useSubmitApplication';
+import { useUploadResume } from '@/hooks/mutation/useUploadResume';
 
 const JobApply = () => {
 	const { id } = useParams();
 	const navigate = useNavigate();
 	const { toast } = useToast();
 	const submitApplicationMutation = useSubmitApplication();
+	const uploadResumeMutation = useUploadResume();
 
 	const {
 		register,
@@ -49,9 +51,29 @@ const JobApply = () => {
 		}
 
 		try {
+			let resumeFileId: string | undefined;
+			console.log({ data });
+			// Step 1: Upload resume if provided
+			if (data.resume) {
+				const uploadResult = await uploadResumeMutation.mutateAsync({
+					file: data.resume,
+					jobId: id,
+				});
+				resumeFileId = uploadResult.fileId;
+			}
+
+			// Step 2: Submit application with resume file ID
+			const applicationData = {
+				email: data.email,
+				name: data.name,
+				phone: data.phone,
+				location: data.location,
+			};
+
 			await submitApplicationMutation.mutateAsync({
 				jobId: id,
-				data,
+				data: applicationData,
+				resumeFileId,
 			});
 
 			toast({
@@ -115,9 +137,19 @@ const JobApply = () => {
 								<Button
 									type='submit'
 									className='w-full bg-gradient-primary hover:opacity-90 font-semibold py-6 text-lg transition-transform duration-200 hover:scale-105'
-									disabled={isSubmitting}
+									disabled={
+										isSubmitting ||
+										uploadResumeMutation.isPending ||
+										submitApplicationMutation.isPending
+									}
 								>
-									{isSubmitting ? 'Submitting...' : 'Submit Application'}
+									{uploadResumeMutation.isPending
+										? 'Uploading Resume...'
+										: submitApplicationMutation.isPending
+										? 'Submitting Application...'
+										: isSubmitting
+										? 'Processing...'
+										: 'Submit Application'}
 								</Button>
 							</CardContent>
 						</Card>

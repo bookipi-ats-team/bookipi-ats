@@ -1,22 +1,27 @@
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/services/api.service';
-import { JobApplicationFormData } from '@/schemas/job-application-schema';
+import { ApplicantData } from '@/schemas/job-application-schema';
 
 interface SubmitApplicationParams {
   jobId: string;
-  data: JobApplicationFormData;
+  data: ApplicantData;
+  resumeFileId?: string;
 }
 
 interface SubmitApplicationResponse {
-  success: boolean;
-  applicationId: string;
-  message?: string;
+  _id: string;
+  jobId: string;
+  applicantId: string;
+  stage: string;
+  resumeFileId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
- * Hook for submitting job applications using the new API service
+ * Hook for submitting job applications using the /public/apply endpoint
  * 
- * This replaces the old mock implementation with a real API call
+ * This submits the application with applicant data and optional resumeFileId
  */
 export const useSubmitApplication = () => {
   return useMutation<
@@ -24,13 +29,19 @@ export const useSubmitApplication = () => {
     Error,
     SubmitApplicationParams
   >({
-    mutationFn: async ({ jobId, data }) => {
-      // Using the new API service instead of mock implementation
-      return api.post<SubmitApplicationResponse>(`/jobs/${jobId}/applications`, data);
+    mutationFn: async ({ jobId, data, resumeFileId }) => {
+      const payload = {
+        jobId,
+        applicant: data,
+        ...(resumeFileId && { resumeFileId }),
+      };
+
+      // Using the /public/apply endpoint
+      return api.post<SubmitApplicationResponse>('/public/apply', payload);
     },
 
     onSuccess: (response) => {
-      console.log('Application submitted successfully:', response.applicationId);
+      console.log('Application submitted successfully:', response._id);
     },
 
     onError: (error) => {

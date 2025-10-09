@@ -26,8 +26,6 @@ export const ResumeUploadSection = ({
 	const [isDragOver, setIsDragOver] = useState(false);
 	const watchedResume = watch('resume');
 
-	console.log({ watchedResume });
-
 	// Check if watchedResume is a valid File object
 	const hasValidFile =
 		watchedResume instanceof File &&
