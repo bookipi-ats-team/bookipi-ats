@@ -13,6 +13,7 @@
 		"run:ios": "tsc && vite build --mode staging && npx cap run ios",
 		"run:device": "tsc && vite build --mode staging && npx cap run ios --target=7B88A2FC-0124-41B8-97D1-38242EA7429C",
 		"run:android": "tsc && vite build --mode staging && npx cap run android",
+		"build:debug-apk": "tsc && vite build --mode staging && npx cap sync && cd android && ./gradlew assembleDebug",
 		"build:dev": "vite build --mode development",
 		"lint": "eslint .",
 		"preview": "vite preview"
