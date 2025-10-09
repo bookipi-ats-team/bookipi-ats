@@ -58,6 +58,17 @@ export const postScoreResume: RequestHandler = async (req, res) => {
     const mode = (req.query.mode as string | undefined)?.toLowerCase();
     const forceStatic = mode === "static";
     const result = await scoreResume(body, { forceStatic });
+
+    if (result.status === "pending") {
+      res.status(202).json(result);
+      return;
+    }
+
+    if (result.status === "failed") {
+      res.status(422).json(result);
+      return;
+    }
+
     res.status(200).json(result);
   } catch (error) {
     console.error("Failed to score resume", error);

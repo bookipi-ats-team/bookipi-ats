@@ -5,6 +5,7 @@ import {
   connectToDatabase,
   disconnectFromDatabase,
 } from "./config/database.js";
+import { startResumeParsingWorker } from "./services/resumeProcessing.js";
 
 let server: Server | null = null;
 let isShuttingDown = false;
@@ -12,6 +13,7 @@ let isShuttingDown = false;
 const startServer = async (): Promise<void> => {
   try {
     await connectToDatabase();
+    await startResumeParsingWorker();
 
     server = app.listen(env.port, () => {
       console.log(`API listening on port ${env.port} (${env.nodeEnv})`);

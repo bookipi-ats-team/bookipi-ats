@@ -218,6 +218,7 @@ export const getJobs: RequestHandler<
       location,
       industry,
       employmentType,
+      publishedAfter,
       cursor,
       limit,
     } = req.query;
@@ -249,6 +250,10 @@ export const getJobs: RequestHandler<
 
     if (employmentType) {
       filter.employmentType = employmentType;
+    }
+
+    if (publishedAfter) {
+      filter.publishedAt = { $gte: publishedAfter };
     }
 
     if (cursor) {
