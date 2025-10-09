@@ -1,5 +1,3 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import { Readable } from "node:stream";
 import { google, type drive_v3 } from "googleapis";
 import env from "../config/env.js";
@@ -8,27 +6,24 @@ const DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive.file"];
 
 let driveClientPromise: Promise<drive_v3.Drive> | null = null;
 
-const resolveCredentialsPath = () => {
-  if (env.googleDriveCredentialsPath) {
-    return path.isAbsolute(env.googleDriveCredentialsPath)
-      ? env.googleDriveCredentialsPath
-      : path.resolve(process.cwd(), env.googleDriveCredentialsPath);
-  }
-
-  return path.resolve(process.cwd(), "credentials.json");
-};
-
 type ServiceAccountCredentials = {
   client_email: string;
   private_key: string;
 };
 
 const loadServiceAccountCredentials = async (): Promise<ServiceAccountCredentials> => {
-  const credentialsPath = resolveCredentialsPath();
+  if (!env.googleDriveCredentialsBase64) {
+    throw new Error(
+      "GOOGLE_DRIVE_CREDENTIALS_BASE64 environment variable is not set",
+    );
+  }
 
   try {
-    const raw = await fs.readFile(credentialsPath, "utf8");
-    const parsed = JSON.parse(raw) as {
+    const decoded = Buffer.from(
+      env.googleDriveCredentialsBase64,
+      "base64",
+    ).toString("utf8");
+    const parsed = JSON.parse(decoded) as {
       client_email?: string;
       private_key?: string;
     };
@@ -44,9 +39,9 @@ const loadServiceAccountCredentials = async (): Promise<ServiceAccountCredential
       private_key: parsed.private_key,
     };
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+    if (error instanceof SyntaxError) {
       throw new Error(
-        `Google service account credentials not found at ${credentialsPath}`,
+        "Invalid JSON in GOOGLE_DRIVE_CREDENTIALS_BASE64 environment variable",
       );
     }
 
@@ -98,6 +93,13 @@ export interface UploadDriveFileResult {
   sizeBytes: number;
   webViewLink?: string;
   webContentLink?: string;
+}
+
+export interface DownloadDriveFileResult {
+  data: Buffer;
+  mimeType?: string;
+  name?: string;
+  sizeBytes?: number;
 }
 
 export const uploadFileToDrive = async ({
@@ -167,6 +169,44 @@ export const uploadFileToDrive = async ({
     sizeBytes: sizeString ? Number(sizeString) : data.byteLength,
     webViewLink,
     webContentLink,
+  };
+};
+
+export const downloadFileFromDrive = async (
+  fileId: string,
+): Promise<DownloadDriveFileResult> => {
+  const drive = await getDriveClient();
+
+  const [metadataResponse, mediaResponse] = await Promise.all([
+    drive.files.get({
+      fileId,
+      fields: "id,name,mimeType,size",
+      supportsAllDrives: true,
+    }),
+    drive.files.get(
+      {
+        fileId,
+        alt: "media",
+        supportsAllDrives: true,
+      },
+      {
+        responseType: "arraybuffer",
+      },
+    ),
+  ]);
+
+  const mediaData = mediaResponse.data;
+  const buffer = Buffer.isBuffer(mediaData)
+    ? mediaData
+    : Buffer.from(mediaData as ArrayBuffer);
+
+  const metadata = metadataResponse.data;
+
+  return {
+    data: buffer,
+    mimeType: metadata.mimeType ?? undefined,
+    name: metadata.name ?? undefined,
+    sizeBytes: metadata.size ? Number(metadata.size) : undefined,
   };
 };
 

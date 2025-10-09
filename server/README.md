@@ -18,14 +18,14 @@ Environment variables:
 - `NODE_ENV` (default `development`)
 - `MONGODB_URI` (optional) – MongoDB connection string; if omitted, the server boots without a database connection and logs a warning
 - `OPENAI_API_KEY` (optional) – enables AI-backed suggestions; when missing, all AI endpoints return deterministic static fallbacks
-- `GOOGLE_DRIVE_CREDENTIALS_PATH` (default `./credentials.json`) – path to the Google service account JSON used for Drive access
+- `GOOGLE_DRIVE_CREDENTIALS_BASE64` (required for Drive features) – base64-encoded Google service account JSON credentials
 - `GOOGLE_DRIVE_FOLDER_ID` (required) – Drive folder where finalized resume files are stored
 
 Create a `.env` file if you need to override defaults. The server logs the active port and environment on boot.
 
 ### Resume Storage (Google Drive)
-- Place your Google Cloud service account JSON key outside of version control. Reference it via `GOOGLE_DRIVE_CREDENTIALS_PATH` (defaults to `./credentials.json`).
-- Share the target Drive folder with the service account email and set `GOOGLE_DRIVE_FOLDER_ID` to that folder's ID (`1k8Os2R9oUauuGVreY-pV0aIuWiXqmqsz` in development).
+- Encode your Google Cloud service account JSON key as base64: `cat credentials.json | base64` and set it as `GOOGLE_DRIVE_CREDENTIALS_BASE64` in your environment variables.
+- Share the target Drive folder with the service account email and set `GOOGLE_DRIVE_FOLDER_ID` to that folder's ID.
 - Resume uploads are staged locally under `uploads/resumes/tmp` and pushed to Drive during confirmation; successful confirmations store the Drive file ID in `storagePath` and return the public Drive URL.
 - If a confirmation fails after upload, the API attempts to delete the Drive file and leaves the temp upload cleaned up.
 
@@ -80,7 +80,7 @@ Create a `.env` file if you need to override defaults. The server logs the activ
 - `PATCH /business/:id` body `{ name?, description?, industry? }` → `200 OK Business`
 
 ### Jobs
-- `GET /jobs?businessId=&status=&q=&location=&industry=&cursor=&limit=` → `200 OK { items: Job[], nextCursor? }`
+- `GET /jobs?businessId=&status=&q=&location=&industry=&employmentType=&publishedAfter=&cursor=&limit=` → `200 OK { items: Job[], nextCursor? }`
 - `POST /jobs` body `{ businessId, title, description, mustHaves[]?, location?, employmentType, industry? }` → `200 OK Job`
 - `GET /jobs/:id` → `200 OK Job`
 - `PATCH /jobs/:id` body `{ title?, description?, mustHaves[]?, location?, employmentType, industry?, status? }` → `200 OK Job`
@@ -101,8 +101,11 @@ Create a `.env` file if you need to override defaults. The server logs the activ
 - `GET /applications/:id/notes` → `200 OK Note[]`
 
 ### Files (Resumes)
-- `POST /files/resume/sign` body `{ mimeType, sizeBytes }` → `200 OK { uploadUrl, fileId }`
-- `POST /files/resume/confirm` body `{ fileId, applicantId?, jobId?, originalName, mimeType, sizeBytes }` → `200 OK ResumeFile` (triggers async parsing/scoring)
+- `POST /files/resume/uploads?applicantId=&jobId=&originalName=` raw body=`<binary>` → `200 OK ResumeFile`
+  - Requires `Content-Type` header set to a supported resume MIME type (`pdf`, `doc`, `docx`, `odt`, `txt`).
+  - `applicantId` and `jobId` query params are optional and validate that linked records exist and share the same business.
+  - `originalName` query param lets clients override the stored filename; defaults to `<generated>.extension` when omitted.
+  - Payload size must be > 0 bytes and ≤ `env.maxResumeFileSize`; successful uploads enqueue resume parsing/scoring.
 
 ### AI Services
 - `POST /ai/suggest-job-titles` body `{ businessId?, industry?, description? }` → `200 OK { items: string[], source: "AI" | "STATIC" }`

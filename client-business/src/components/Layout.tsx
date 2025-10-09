@@ -35,7 +35,7 @@ export const Layout: React.FC = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border">
+        {/* <div className="p-4 border-t border-border">
           <div className="text-xs text-text-secondary">
             <div className="flex items-center gap-2 mb-1">
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
@@ -45,7 +45,7 @@ export const Layout: React.FC = () => {
               Switch to live API in <code className="bg-gray-200 px-1 rounded">src/api/config.ts</code>
             </p>
           </div>
-        </div>
+        </div> */}
       </aside>
 
       {/* Main content */}

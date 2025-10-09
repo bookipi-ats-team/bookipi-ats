@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,14 +22,17 @@ import {
 	JobApplicationFormData,
 } from '@/schemas/job-application-schema';
 import { useSubmitApplication } from '@/hooks/mutation/useSubmitApplication';
-import { useUploadResume } from '@/hooks/mutation/useUploadResume';
 
 const JobApply = () => {
 	const { id } = useParams();
 	const navigate = useNavigate();
 	const { toast } = useToast();
 	const submitApplicationMutation = useSubmitApplication();
-	const uploadResumeMutation = useUploadResume();
+	const [isUploadingResume, setIsUploadingResume] = useState(false);
+
+	const handleResumeUploadStatusChange = useCallback((isUploading: boolean) => {
+		setIsUploadingResume(isUploading);
+	}, []);
 
 	const {
 		register,
@@ -50,31 +54,31 @@ const JobApply = () => {
 			return;
 		}
 
-		try {
-			let resumeFileId: string | undefined;
-			console.log({ data });
-			// Step 1: Upload resume if provided
-			if (data.resume) {
-				const uploadResult = await uploadResumeMutation.mutateAsync({
-					file: data.resume,
-					jobId: id,
-				});
-				resumeFileId = uploadResult.fileId;
-			}
+	const resumeFileId = data.resumeFileId;
 
-			// Step 2: Submit application with resume file ID
-			const applicationData = {
-				email: data.email,
-				name: data.name,
-				phone: data.phone,
-				location: data.location,
-			};
+	if (!resumeFileId) {
+		toast({
+			title: 'Resume Required',
+			description: 'Please upload your resume before submitting the application.',
+			variant: 'destructive',
+		});
+		return;
+	}
 
-			await submitApplicationMutation.mutateAsync({
-				jobId: id,
-				data: applicationData,
-				resumeFileId,
-			});
+	try {
+		const applicationData = {
+			email: data.email,
+			name: data.name,
+			phone: data.phone,
+			location: data.location,
+		};
+
+		await submitApplicationMutation.mutateAsync({
+			jobId: id,
+			data: applicationData,
+			resumeFileId,
+		});
+
 
 			toast({
 				title: 'Application Submitted!',
@@ -124,33 +128,37 @@ const JobApply = () => {
 						</FormSection>
 
 						<FormSection title='Resume Upload'>
-							<ResumeUploadSection
-								register={register}
-								errors={errors}
-								setValue={setValue}
-								watch={watch}
-							/>
+						<ResumeUploadSection
+							register={register}
+							errors={errors}
+							setValue={setValue}
+							watch={watch}
+							jobId={id}
+							onUploadStatusChange={handleResumeUploadStatusChange}
+						/>
+
 						</FormSection>
 
 						<Card className='transition-all duration-300 hover:shadow-md'>
 							<CardContent className='pt-6'>
-								<Button
-									type='submit'
-									className='w-full bg-gradient-primary hover:opacity-90 font-semibold py-6 text-lg transition-transform duration-200 hover:scale-105'
-									disabled={
-										isSubmitting ||
-										uploadResumeMutation.isPending ||
-										submitApplicationMutation.isPending
-									}
-								>
-									{uploadResumeMutation.isPending
-										? 'Uploading Resume...'
-										: submitApplicationMutation.isPending
-										? 'Submitting Application...'
-										: isSubmitting
-										? 'Processing...'
-										: 'Submit Application'}
-								</Button>
+						<Button
+							type='submit'
+							className='w-full bg-gradient-primary hover:opacity-90 font-semibold py-6 text-lg transition-transform duration-200 hover:scale-105'
+							disabled={
+							isSubmitting ||
+							isUploadingResume ||
+							submitApplicationMutation.isPending
+							}
+						>
+							{isUploadingResume
+								? 'Uploading Resume...'
+								: submitApplicationMutation.isPending
+								? 'Submitting Application...'
+								: isSubmitting
+								? 'Processing...'
+								: 'Submit Application'}
+						</Button>
+
 							</CardContent>
 						</Card>
 					</form>

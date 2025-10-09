@@ -6,21 +6,21 @@ export const jobApplicationSchema = z.object({
   phone: z.string().min(1, 'Phone number is required'),
   location: z.string().min(1, 'Current location is required'),
   resume: z.instanceof(File, { message: 'Please upload your resume' })
-    .refine((file) => file.size <= 10 * 1024 * 1024, 'File size must be less than 10MB')
+    .refine((file) => file.size <= 15 * 1024 * 1024, 'File size must be less than 15MB')
     .refine(
       (file) => {
         const allowedTypes = [
           'application/pdf',
-          'image/jpeg',
-          'image/jpg',
-          'image/png',
-          'image/gif',
-          'image/webp'
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.oasis.opendocument.text',
+          'text/plain',
         ];
         return allowedTypes.includes(file.type);
       },
-      'Only PDF and image files (JPEG, PNG, GIF, WebP) are allowed'
+      'Only PDF, DOC, DOCX, ODT or TXT files are allowed'
     ),
+  resumeFileId: z.string().min(1, 'Resume upload was not confirmed').optional(),
 });
 
 // Schema for applicant data without the resume file (for API submission)
