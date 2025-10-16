@@ -8,16 +8,19 @@ import {
   getApplicantByIdParamsSchema,
   getApplicantsQuerySchema,
 } from "../validation/applicants.js";
+import { validateAuth } from "../middleware/validateAuth.js";
 
 const router = Router();
 
 router.get(
   "/",
+  validateAuth,
   validateRequest({ query: getApplicantsQuerySchema }),
   getApplicants,
 );
 router.get(
   "/:id",
+  validateAuth,
   validateRequest({ params: getApplicantByIdParamsSchema }),
   getApplicantById,
 );

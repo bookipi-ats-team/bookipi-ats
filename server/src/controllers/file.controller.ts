@@ -27,8 +27,6 @@ const handleError = (res: Parameters<RequestHandler>[1], error: unknown) => {
       return;
     }
 
-    // eslint-disable-next-line no-console
-    console.error("Resume file handler failed", error);
     res.status(500).json({ error: "Internal server error" });
     return;
   }
@@ -42,22 +40,16 @@ const ensureEntitiesExist = async (applicantId?: string, jobId?: string) => {
     : null;
 
   if (applicantId && !applicantRecord) {
-    return { error: "Applicant not found" } as const;
+    return { error: "Applicant not found" };
   }
 
   const jobRecord = jobId ? await Job.findById(jobId).exec() : null;
 
   if (jobId && !jobRecord) {
-    return { error: "Job not found" } as const;
+    return { error: "Job not found" };
   }
 
-  if (applicantRecord && applicantRecord.businessId && jobRecord) {
-    if (!applicantRecord.businessId.equals(jobRecord.businessId.toString())) {
-      return { error: "Applicant belongs to a different business" } as const;
-    }
-  }
-
-  return { applicantRecord, jobRecord } as const;
+  return { applicantRecord, jobRecord };
 };
 
 const mimeExtensionMap = new Map<string, string>([
@@ -98,8 +90,7 @@ const resolveMimeType = (req: Parameters<RequestHandler>[0]) => {
 };
 
 export const uploadResume: RequestHandler = async (req, res) => {
-  const { applicantId, jobId, originalName } =
-    req.query as ResumeUploadQuery;
+  const { applicantId, jobId, originalName } = req.query as ResumeUploadQuery;
 
   if (!(req.body instanceof Buffer)) {
     res.status(400).json({ error: "Resume upload must be binary data" });
@@ -141,7 +132,11 @@ export const uploadResume: RequestHandler = async (req, res) => {
 
   const { applicantRecord, jobRecord } = entityCheck;
   const fileId = randomUUID();
-  const normalizedOriginalName = resolveOriginalName(originalName, fileId, mimeType);
+  const normalizedOriginalName = resolveOriginalName(
+    originalName,
+    fileId,
+    mimeType,
+  );
   let driveResult: SaveResumeToDriveResult | null = null;
 
   try {
@@ -168,12 +163,13 @@ export const uploadResume: RequestHandler = async (req, res) => {
     res.status(200).json(resumeFile);
   } catch (error) {
     if (driveResult) {
-      await deleteResumeFromDrive(driveResult.storagePath).catch((cleanupError) => {
-        if (cleanupError instanceof Error) {
-          // eslint-disable-next-line no-console
-          console.warn("Failed to clean up Google Drive file", cleanupError);
-        }
-      });
+      await deleteResumeFromDrive(driveResult.storagePath).catch(
+        (cleanupError) => {
+          if (cleanupError instanceof Error) {
+            console.warn("Failed to clean up Google Drive file", cleanupError);
+          }
+        },
+      );
     }
 
     handleError(res, error);

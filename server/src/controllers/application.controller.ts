@@ -98,85 +98,94 @@ export const getApplicationById: RequestHandler = async (req, res) => {
   }
 };
 
-const findOrCreateApplicant = async (
-  jobBusinessId: Types.ObjectId,
-  payload: CreateApplicationBody["applicant"],
-) => {
-  if (payload.id) {
-    const applicant = await Applicant.findById(payload.id).exec();
+// const findOrCreateApplicant = async (
+//   jobBusinessId: Types.ObjectId,
+//   payload: CreateApplicationBody["applicant"],
+// ) => {
+//   if (payload.id) {
+//     const application = await Application.findById(payload.id).exec();
+//
+//     if (application) {
+//       return { error: "Application already exists" } as const;
+//     }
+//
+//     if (
+//       application.businessId &&
+//       !application.businessId.equals(jobBusinessId)
+//     ) {
+//       return { error: "Applicant belongs to a different business" } as const;
+//     }
+//
+//     if (!applicant.businessId) {
+//       applicant.businessId = jobBusinessId;
+//       const phone = normalizeOptionalField(payload.phone);
+//       const location = normalizeOptionalField(payload.location);
+//
+//       if (phone !== undefined) {
+//         applicant.phone = phone;
+//       }
+//       if (location !== undefined) {
+//         applicant.location = location;
+//       }
+//
+//       await applicant.save();
+//     }
+//
+//     return { applicant } as const;
+//   }
+//
+//   const email = payload.email!.trim().toLowerCase();
+//   const name = payload.name!.trim();
+//   const phone = normalizeOptionalField(payload.phone);
+//   const location = normalizeOptionalField(payload.location);
+//
+//   const existingApplicant = await Applicant.findOne({
+//     businessId: jobBusinessId,
+//     email,
+//   }).exec();
+//
+//   if (existingApplicant) {
+//     existingApplicant.name = name;
+//
+//     if (phone !== undefined) {
+//       existingApplicant.phone = phone;
+//     }
+//
+//     if (location !== undefined) {
+//       existingApplicant.location = location;
+//     }
+//
+//     await existingApplicant.save();
+//
+//     return { applicant: existingApplicant } as const;
+//   }
 
-    if (!applicant) {
-      return { error: "Applicant not found" } as const;
-    }
+//   const applicant = new Applicant({
+//     businessId: jobBusinessId,
+//     email,
+//     name,
+//     phone,
+//     location,
+//   });
+//
+//   await applicant.save();
+//
+//   return { applicant } as const;
+// };
 
-    if (applicant.businessId && !applicant.businessId.equals(jobBusinessId)) {
-      return { error: "Applicant belongs to a different business" } as const;
-    }
-
-    if (!applicant.businessId) {
-      applicant.businessId = jobBusinessId;
-      const phone = normalizeOptionalField(payload.phone);
-      const location = normalizeOptionalField(payload.location);
-
-      if (phone !== undefined) {
-        applicant.phone = phone;
-      }
-      if (location !== undefined) {
-        applicant.location = location;
-      }
-
-      await applicant.save();
-    }
-
-    return { applicant } as const;
-  }
-
-  const email = payload.email!.trim().toLowerCase();
-  const name = payload.name!.trim();
-  const phone = normalizeOptionalField(payload.phone);
-  const location = normalizeOptionalField(payload.location);
-
-  const existingApplicant = await Applicant.findOne({
-    businessId: jobBusinessId,
-    email,
-  }).exec();
-
-  if (existingApplicant) {
-    existingApplicant.name = name;
-
-    if (phone !== undefined) {
-      existingApplicant.phone = phone;
-    }
-
-    if (location !== undefined) {
-      existingApplicant.location = location;
-    }
-
-    await existingApplicant.save();
-
-    return { applicant: existingApplicant } as const;
-  }
-
-  const applicant = new Applicant({
-    businessId: jobBusinessId,
-    email,
-    name,
-    phone,
-    location,
-  });
-
-  await applicant.save();
-
-  return { applicant } as const;
-};
-
-export const createApplication: RequestHandler = async (req, res) => {
+export const createApplication: RequestHandler<
+  unknown,
+  unknown,
+  CreateApplicationBody
+> = async (req, res) => {
   try {
     const {
       jobId,
-      applicant: applicantPayload,
+      // applicant: applicantPayload,
       resumeFileId,
-    } = req.body as CreateApplicationBody;
+    } = req.body;
+
+    const applicant = req.app.locals.applicant;
 
     const job = await Job.findById(jobId).exec();
 
@@ -187,17 +196,17 @@ export const createApplication: RequestHandler = async (req, res) => {
 
     const jobBusinessId = new Types.ObjectId(job.businessId.toString());
 
-    const applicantResult = await findOrCreateApplicant(
-      jobBusinessId,
-      applicantPayload,
-    );
+    // const applicantResult = await Applicant.findOne({
+    //   jobBusinessId,
+    //   applicantPayload,
+    // });
 
-    if ("error" in applicantResult) {
-      res.status(400).json({ error: applicantResult.error });
-      return;
-    }
+    // if ("error" in applicantResult) {
+    //   res.status(400).json({ error: applicantResult.error });
+    //   return;
+    // }
 
-    const { applicant } = applicantResult;
+    // const { applicant } = applicantResult;
 
     let resumeObjectId: Types.ObjectId | undefined;
 

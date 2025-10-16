@@ -11,6 +11,7 @@
     "lint": "eslint . --ext .ts"
   },
   "dependencies": {
+    "@bookipi/auth-sdk": "^2.0.1-20251016003138",
     "@types/cors": "^2.8.19",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

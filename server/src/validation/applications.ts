@@ -42,7 +42,9 @@ const limitSchema = z
   });
 
 const stageSchema = singleStringValue
-  .transform((value) => (value === undefined || value.length === 0 ? undefined : value))
+  .transform((value) =>
+    value === undefined || value.length === 0 ? undefined : value,
+  )
   .pipe(z.enum(stageCodes).optional());
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
@@ -79,14 +81,20 @@ export const getJobApplicationsQuerySchema = z.object({
   limit: limitSchema,
 });
 
-export type GetJobApplicationsParams = z.infer<typeof getJobApplicationsParamsSchema>;
-export type GetJobApplicationsQuery = z.infer<typeof getJobApplicationsQuerySchema>;
+export type GetJobApplicationsParams = z.infer<
+  typeof getJobApplicationsParamsSchema
+>;
+export type GetJobApplicationsQuery = z.infer<
+  typeof getJobApplicationsQuerySchema
+>;
 
 export const getApplicationByIdParamsSchema = z.object({
   id: objectIdString,
 });
 
-export type GetApplicationByIdParams = z.infer<typeof getApplicationByIdParamsSchema>;
+export type GetApplicationByIdParams = z.infer<
+  typeof getApplicationByIdParamsSchema
+>;
 
 const applicantBodySchema = z
   .object({
@@ -120,7 +128,7 @@ const applicantBodySchema = z
 
 export const createApplicationBodySchema = z.object({
   jobId: objectIdString,
-  applicant: applicantBodySchema,
+  // applicant: applicantBodySchema,
   resumeFileId: optionalObjectIdString,
 });
 
@@ -138,7 +146,9 @@ export const patchApplicationBodySchema = z
   });
 
 export type PatchApplicationBody = z.infer<typeof patchApplicationBodySchema>;
-export type PatchApplicationParams = z.infer<typeof patchApplicationParamsSchema>;
+export type PatchApplicationParams = z.infer<
+  typeof patchApplicationParamsSchema
+>;
 
 export const postApplicationNoteParamsSchema = getApplicationByIdParamsSchema;
 
@@ -146,9 +156,15 @@ export const postApplicationNoteBodySchema = z.object({
   body: nonEmptyTrimmedString,
 });
 
-export type PostApplicationNoteBody = z.infer<typeof postApplicationNoteBodySchema>;
-export type PostApplicationNoteParams = z.infer<typeof postApplicationNoteParamsSchema>;
+export type PostApplicationNoteBody = z.infer<
+  typeof postApplicationNoteBodySchema
+>;
+export type PostApplicationNoteParams = z.infer<
+  typeof postApplicationNoteParamsSchema
+>;
 
 export const getApplicationNotesParamsSchema = getApplicationByIdParamsSchema;
 
-export type GetApplicationNotesParams = z.infer<typeof getApplicationNotesParamsSchema>;
+export type GetApplicationNotesParams = z.infer<
+  typeof getApplicationNotesParamsSchema
+>;

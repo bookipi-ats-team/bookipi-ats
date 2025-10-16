@@ -30,7 +30,7 @@ export type Certification = {
 
 export interface IApplicant extends Document {
   _id: Types.ObjectId;
-  businessId?: Types.ObjectId;
+  authModuleUserId?: string;
   email: string;
   name: string;
   firstName?: string;
@@ -110,8 +110,15 @@ const certificationSchema = new Schema<Certification>(
 
 const applicantSchema = new Schema<IApplicant>(
   {
-    businessId: { type: Schema.Types.ObjectId, ref: "Business", index: true },
-    email: { type: String, required: true, trim: true, lowercase: true },
+    authModuleUserId: { type: String, trim: true, index: true },
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      unique: true,
+      index: true,
+    },
     name: { type: String, required: true, trim: true },
     firstName: { type: String, trim: true },
     lastName: { type: String, trim: true },
