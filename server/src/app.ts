@@ -1,13 +1,13 @@
 import express, { Router } from "express";
 import cors from "cors";
 import helmet from "helmet";
-import businessRoutes from "./routes/business.js";
-import applicantRoutes from "./routes/applicants.js";
-import applicationRoutes from "./routes/applications.js";
-import jobRoutes from "./routes/jobs.js";
-import aiRoutes from "./routes/ai.js";
-import filesRoutes from "./routes/files.js";
-import publicRoutes from "./routes/public.js";
+import businessRoutes from "./routes/business.route.js";
+import applicantRoutes from "./routes/applicants.route.js";
+import applicationRoutes from "./routes/applications.route.js";
+import jobRoutes from "./routes/jobs.route.js";
+import aiRoutes from "./routes/ai.route.js";
+import filesRoutes from "./routes/files.route.js";
+import publicRoutes from "./routes/public.route.js";
 
 const app = express();
 
