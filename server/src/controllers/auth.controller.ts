@@ -5,10 +5,12 @@ import { extractAuthToken, extractNameFromFullName } from "../utils/auth.js";
 import { Applicant } from "../models/Applicant.js";
 import { executeIfAsync } from "../utils/executeIf.js";
 import { UnauthorizedError, NotFoundError } from "../errors/AppError.js";
+import { LoginType } from "../validation/auth.js";
+import { Business } from "../models/Business.js";
 
 export const login: RequestHandler = async (req, res) => {
   const authToken = extractAuthToken(req.headers.authorization);
-  const type = req.headers["x-user-type"];
+  const type = req.headers["x-user-type"] as LoginType;
 
   if (!authToken) {
     throw new UnauthorizedError("Missing or invalid Authorization header");
@@ -25,8 +27,8 @@ export const login: RequestHandler = async (req, res) => {
     throw new NotFoundError("User not found");
   }
 
-  const returnedApplicant = await executeIfAsync(
-    type === "applicant",
+  const applicant = await executeIfAsync(
+    type === LoginType.Applicant,
     async () => {
       const linkedUser = await Applicant.findOne({
         authModuleUserId: me.userId,
@@ -71,9 +73,56 @@ export const login: RequestHandler = async (req, res) => {
     },
   );
 
-  // TODO: Handle business signup
+  if (applicant) {
+    res.status(200).json({ message: "Signup successful", applicant });
+    return;
+  }
 
-  res
-    .status(200)
-    .json({ message: "Signup successful", applicant: returnedApplicant });
+  const business = await executeIfAsync(
+    type === LoginType.Business,
+    async () => {
+      const linkedUser = await Business.findOne({
+        authModuleUserId: me.userId,
+      })
+        .read("secondaryPreferred")
+        .lean();
+
+      let user =
+        linkedUser ||
+        (await Applicant.findOne({ email: me.email })
+          .read("secondaryPreferred")
+          .lean());
+
+      if (!user) {
+        const { firstName, lastName } = extractNameFromFullName(me.fullName);
+
+        const created = await Applicant.create({
+          email: me.email,
+          authModuleUserId: me.userId,
+          name:
+            me.fullName ||
+            `${me.firstName || firstName} ${me.lastName || lastName}`,
+          firstName: me.firstName || firstName,
+          lastName: me.lastName || lastName,
+          preferences: me.metadata?.currency
+            ? { salary: { currency: me.metadata.currency } }
+            : undefined,
+        });
+
+        return created;
+      } else {
+        // If we found a user by email but it's not linked yet, link it
+        if (!user.authModuleUserId && me.userId) {
+          await Applicant.updateOne(
+            { _id: user._id },
+            { authModuleUserId: me.userId },
+          ).exec();
+          user.authModuleUserId = me.userId;
+        }
+        return user;
+      }
+    },
+  );
+
+  res.status(200).json({ message: "Signup successful", business });
 };
