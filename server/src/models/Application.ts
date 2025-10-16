@@ -11,15 +11,53 @@ export const stageCodes = [
 
 export type StageCode = (typeof stageCodes)[number];
 
-export interface IApplication extends Document {
+export const sourceCodes = [
+  "BOOKIPI",
+  "LINKEDIN",
+  "SEEK",
+  "INDEED",
+  "GLASSDOOR",
+  "REFERRAL",
+] as const;
+
+export type SourceCode = (typeof sourceCodes)[number];
+
+export type Application = {
+  _id: Types.ObjectId;
   applicantId: Types.ObjectId;
   jobId: Types.ObjectId;
   businessId: Types.ObjectId;
+
+  source: SourceCode;
   stage: StageCode;
+
   score?: number;
   cvScore?: number;
   cvTips?: string[];
+
+  // encrypted at rest
   notesCount: number;
+
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export interface IApplication extends Document {
+  _id: Types.ObjectId;
+  applicantId: Types.ObjectId;
+  jobId: Types.ObjectId;
+  businessId: Types.ObjectId;
+
+  source: SourceCode;
+  stage: StageCode;
+
+  score?: number;
+  cvScore?: number;
+  cvTips?: string[];
+
+  // encrypted at rest
+  notesCount: number;
+
   resumeFileId?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -43,6 +81,12 @@ const applicationSchema = new Schema<IApplication>(
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,
+      index: true,
+    },
+    source: {
+      type: String,
+      enum: sourceCodes,
+      default: "BOOKIPI",
       index: true,
     },
     stage: {
