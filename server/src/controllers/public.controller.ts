@@ -1,8 +1,10 @@
 import type { RequestHandler } from "express";
-import { Schema, Types } from "mongoose";
+import type { HydratedDocument, ObjectId } from "mongoose";
+import { Types } from "mongoose";
 import { Applicant } from "../models/Applicant.js";
-import { Application } from "../models/Application.js";
+import { Application, ApplicationStageCode } from "../models/Application.js";
 import { Job, type IJob } from "../models/Job.js";
+import type { IBusiness } from "../models/Business.js";
 import { ResumeFile } from "../models/ResumeFile.js";
 import { NotFoundError } from "../errors/AppError.js";
 import type {
@@ -38,8 +40,7 @@ const buildJobsFilter = (query: GetPublicJobsQuery) => {
   }
 
   if (query.location) {
-    // match any of the location subfields
-    const andArr = (filter.$and as any[]) || [];
+    const andArr = [];
     andArr.push({
       $or: [
         { "location.city": { $regex: query.location, $options: "i" } },
@@ -78,7 +79,7 @@ const buildJobsFilter = (query: GetPublicJobsQuery) => {
 };
 
 const findOrCreateApplicant = async (
-  businessId: Schema.Types.ObjectId,
+  businessId: ObjectId,
   payload: PostPublicApplyBody["applicant"],
 ) => {
   const email = payload.email.trim().toLowerCase();
@@ -120,12 +121,13 @@ const findOrCreateApplicant = async (
   return applicant;
 };
 
-const ensurePublishedJob = async (jobId: string): Promise<IJob | null> => {
+const ensurePublishedJob = async (jobId: string) => {
   const job = await Job.findOne({ _id: jobId, status: "PUBLISHED" })
-    .populate("businessId", "name description industry")
+    .populate<{
+      businessId: HydratedDocument<IBusiness>;
+    }>("businessId", "name description industry")
     .exec();
-
-  return job ?? null;
+  return job;
 };
 
 export const getPublicJobs: RequestHandler<
@@ -149,7 +151,10 @@ export const getPublicJobs: RequestHandler<
   }
 
   const jobs = await Job.find(filter)
-    .populate("businessId", "name description industry")
+    .populate<{ businessId: HydratedDocument<IBusiness> }>(
+      "businessId",
+      "name description industry",
+    )
     .sort(sort)
     .limit(limit + 1)
     .exec();
@@ -176,14 +181,14 @@ export const getPublicJobs: RequestHandler<
   // Transform jobs to include business field
   const transformedItems = items.map((job) => {
     const jobObj = job.toObject();
-    const businessData = job.businessId as any; // Populated business data
+    const businessData = job.businessId;
     return {
       ...jobObj,
       businessId: job._id,
       business: {
-        name: businessData.name,
-        description: businessData.description,
-        industry: businessData.industry,
+        name: businessData?.name,
+        description: businessData?.description,
+        industry: businessData?.industry,
       },
     };
   });
@@ -206,14 +211,14 @@ export const getPublicJobById: RequestHandler = async (req, res) => {
 
   // Transform job to include business field
   const jobObj = job.toObject();
-  const businessData = job.businessId as any; // Populated business data
+  const businessData = job.businessId;
   const transformedJob = {
     ...jobObj,
     businessId: job._id,
     business: {
-      name: businessData.name,
-      description: businessData.description,
-      industry: businessData.industry,
+      name: businessData?.name,
+      description: businessData?.description,
+      industry: businessData?.industry,
     },
   };
 
@@ -233,7 +238,7 @@ export const postPublicApply: RequestHandler = async (req, res) => {
     throw new NotFoundError("Job not found");
   }
 
-  const businessId = job.businessId;
+  const businessId = job.businessId._id as ObjectId;
   const applicant = await findOrCreateApplicant(businessId, applicantPayload);
 
   let resumeObjectId: Types.ObjectId | undefined;
@@ -268,7 +273,7 @@ export const postPublicApply: RequestHandler = async (req, res) => {
     jobId: job._id,
     businessId,
     applicantId: applicant._id,
-    stage: "NEW",
+    stage: ApplicationStageCode.NEW,
     resumeFileId: resumeObjectId,
   });
 
@@ -291,7 +296,11 @@ export const getPublicApplications: RequestHandler = async (req, res) => {
     applicantId: { $in: applicantIds },
   })
     .sort({ createdAt: -1 })
-    .populate("job")
+    .populate<{
+      job: HydratedDocument<
+        IJob & { businessId?: HydratedDocument<IBusiness> }
+      >;
+    }>("job")
     .exec();
 
   res.status(200).json({ items: applications });
