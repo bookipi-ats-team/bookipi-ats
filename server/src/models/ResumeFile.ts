@@ -1,13 +1,11 @@
 import { Schema, model, type Document, type Types } from "mongoose";
 
-export const resumeParseStatuses = [
-  "pending",
-  "processing",
-  "ready",
-  "failed",
-] as const;
-
-export type ResumeParseStatus = (typeof resumeParseStatuses)[number];
+export enum ResumeParseStatus {
+  PENDING = "pending",
+  PROCESSING = "processing",
+  READY = "ready",
+  FAILED = "failed",
+}
 
 export interface IResumeFile extends Document {
   fileId: string;
@@ -75,8 +73,8 @@ const resumeFileSchema = new Schema<IResumeFile>(
     },
     parseStatus: {
       type: String,
-      enum: resumeParseStatuses,
-      default: "pending",
+      enum: ResumeParseStatus,
+      default: ResumeParseStatus.PENDING,
       index: true,
     },
     parsedText: {

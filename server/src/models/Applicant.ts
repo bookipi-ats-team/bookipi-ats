@@ -1,5 +1,41 @@
 import { Schema, model, type Document, type Types } from "mongoose";
 
+export enum ApplicantVisibility {
+  PUBLIC = "PUBLIC",
+  PRIVATE = "PRIVATE",
+  ANONYMOUS = "ANONYMOUS",
+}
+
+export enum ApplicantStatus {
+  ACTIVE = "ACTIVE",
+  WITHDRAWN = "WITHDRAWN",
+  HIRED = "HIRED",
+  REJECTED = "REJECTED",
+  ARCHIVED = "ARCHIVED",
+}
+
+export enum ApplicantRelocate {
+  NO = "NO",
+  DOMESTIC = "DOMESTIC",
+  INTERNATIONAL = "INTERNATIONAL",
+}
+
+export enum ApplicantWorkAuthStatus {
+  CITIZEN = "CITIZEN",
+  PR = "PR",
+  SPONSORED = "SPONSORED",
+  NONE = "NONE",
+}
+
+export enum LanguageLevel {
+  A2 = "A2",
+  B1 = "B1",
+  B2 = "B2",
+  C1 = "C1",
+  C2 = "C2",
+  NATIVE = "NATIVE",
+}
+
 export type WorkExperience = {
   company: string;
   role: string;
@@ -39,11 +75,11 @@ export interface IApplicant extends Document {
   location?: string;
   profilePhoto?: string;
   bio?: string;
-  visibility?: "PUBLIC" | "PRIVATE" | "ANONYMOUS";
-  status?: "ACTIVE" | "WITHDRAWN" | "HIRED" | "REJECTED" | "ARCHIVED";
+  visibility?: ApplicantVisibility;
+  status?: ApplicantStatus;
   disabled?: boolean;
   skills?: string[];
-  relocate?: "NO" | "DOMESTIC" | "INTERNATIONAL";
+  relocate?: ApplicantRelocate;
   socials?: {
     linkedin?: string;
     github?: string;
@@ -53,7 +89,7 @@ export interface IApplicant extends Document {
   };
   workAuth?: {
     country: string;
-    status: "CITIZEN" | "PR" | "SPONSORED" | "NONE";
+    status: ApplicantWorkAuthStatus;
     expiry?: string;
   };
   experience?: WorkExperience[];
@@ -61,7 +97,7 @@ export interface IApplicant extends Document {
   certifications?: Certification[];
   languages?: {
     code: string;
-    level: "A2" | "B1" | "B2" | "C1" | "C2" | "NATIVE";
+    level: LanguageLevel;
   }[];
   preferences?: {
     salary?: { currency: string; min?: number };
@@ -128,17 +164,17 @@ const applicantSchema = new Schema<IApplicant>(
     bio: { type: String, trim: true },
     visibility: {
       type: String,
-      enum: ["PUBLIC", "PRIVATE", "ANONYMOUS"],
+      enum: ApplicantVisibility,
       default: "PUBLIC",
     },
     status: {
       type: String,
-      enum: ["ACTIVE", "WITHDRAWN", "HIRED", "REJECTED", "ARCHIVED"],
-      default: "ACTIVE",
+      enum: ApplicantStatus,
+      default: ApplicantStatus.ACTIVE,
     },
     disabled: { type: Boolean, default: false },
     skills: [{ type: String }],
-    relocate: { type: String, enum: ["NO", "DOMESTIC", "INTERNATIONAL"] },
+    relocate: { type: String, enum: ApplicantRelocate },
     socials: {
       linkedin: { type: String, trim: true },
       github: { type: String, trim: true },
@@ -148,7 +184,7 @@ const applicantSchema = new Schema<IApplicant>(
     },
     workAuth: {
       country: { type: String, trim: true },
-      status: { type: String, enum: ["CITIZEN", "PR", "SPONSORED", "NONE"] },
+      status: { type: String, enum: ApplicantWorkAuthStatus },
       expiry: { type: String, trim: true },
     },
     experience: { type: [workExperienceSchema], default: undefined },
@@ -160,7 +196,7 @@ const applicantSchema = new Schema<IApplicant>(
           code: { type: String, trim: true },
           level: {
             type: String,
-            enum: ["A2", "B1", "B2", "C1", "C2", "NATIVE"],
+            enum: LanguageLevel,
           },
         },
       ],

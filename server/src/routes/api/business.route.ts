@@ -3,13 +3,13 @@ import {
   createBusiness,
   getMyBusiness,
   updateBusiness,
-} from "../controllers/business.controller.js";
-import { validateRequest } from "../middleware/validateRequest.js";
+} from "../../controllers/business.controller.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
 import {
   createBusinessBodySchema,
   updateBusinessBodySchema,
   updateBusinessParamsSchema,
-} from "../validation/business.js";
+} from "../../validation/business.js";
 
 const router = Router();
 

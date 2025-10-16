@@ -2,13 +2,13 @@ import { Router } from "express";
 import {
   getApplicantById,
   getApplicants,
-} from "../controllers/applicant.controller.js";
-import { validateRequest } from "../middleware/validateRequest.js";
+} from "../../controllers/applicant.controller.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
 import {
   getApplicantByIdParamsSchema,
   getApplicantsQuerySchema,
-} from "../validation/applicants.js";
-import { validateAuth } from "../middleware/validateAuth.js";
+} from "../../validation/applicants.js";
+import { validateAuth } from "../../middleware/validateAuth.js";
 
 const router = Router();
 

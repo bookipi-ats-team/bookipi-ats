@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EmploymentType } from "../models/Job.js";
 import {
   nonEmptyTrimmedString,
   objectIdString,
@@ -6,13 +7,7 @@ import {
   singleStringValue,
 } from "./common.js";
 
-const employmentTypeEnum = z.enum([
-  "FULL_TIME",
-  "PART_TIME",
-  "CONTRACT",
-  "INTERN",
-  "TEMPORARY",
-]);
+const employmentTypeEnum = z.nativeEnum(EmploymentType);
 
 const optionalTrimmedString = singleStringValue.transform((value) =>
   value && value.length > 0 ? value : undefined,

@@ -4,14 +4,14 @@ import {
   postScoreResume,
   postSuggestJobTitles,
   postSuggestMustHaves,
-} from "../controllers/ai.controller.js";
-import { validateRequest } from "../middleware/validateRequest.js";
+} from "../../controllers/ai.controller.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
 import {
   generateJobDescriptionBodySchema,
   scoreResumeBodySchema,
   suggestJobTitlesBodySchema,
   suggestMustHavesBodySchema,
-} from "../validation/ai.js";
+} from "../../validation/ai.js";
 
 const router = Router();
 

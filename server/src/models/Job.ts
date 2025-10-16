@@ -1,23 +1,43 @@
 import { Schema, model, type Document } from "mongoose";
+import { ApplicationSourceCode } from "./Application.js";
 
-export type EmploymentType =
-  | "FULL_TIME"
-  | "PART_TIME"
-  | "CONTRACT"
-  | "INTERN"
-  | "TEMPORARY";
+export enum EmploymentType {
+  FULL_TIME = "FULL_TIME",
+  PART_TIME = "PART_TIME",
+  CONTRACT = "CONTRACT",
+  INTERN = "INTERN",
+  TEMPORARY = "TEMPORARY",
+}
 
-export type JobStatus = "DRAFT" | "PUBLISHED" | "PAUSED" | "CLOSED";
+export enum JobStatus {
+  DRAFT = "DRAFT",
+  PUBLISHED = "PUBLISHED",
+  PAUSED = "PAUSED",
+  CLOSED = "CLOSED",
+}
 
-export type JobEducationalAttainment =
-  | "NONE"
-  | "HIGH_SCHOOL"
-  | "ASSOCIATE"
-  | "BACHELORS"
-  | "MASTERS"
-  | "DOCTORATE"
-  | "VOCATIONAL"
-  | "OTHER";
+export enum JobEducationalAttainment {
+  NONE = "NONE",
+  HIGH_SCHOOL = "HIGH_SCHOOL",
+  ASSOCIATE = "ASSOCIATE",
+  BACHELORS = "BACHELORS",
+  MASTERS = "MASTERS",
+  DOCTORATE = "DOCTORATE",
+  VOCATIONAL = "VOCATIONAL",
+  OTHER = "OTHER",
+}
+
+export enum WorkMode {
+  ONSITE = "ONSITE",
+  REMOTE = "REMOTE",
+  HYBRID = "HYBRID",
+}
+
+export enum JobSalaryType {
+  YEAR = "YEAR",
+  MONTH = "MONTH",
+  HOUR = "HOUR",
+}
 
 export interface IJob extends Document {
   businessId: Schema.Types.ObjectId;
@@ -40,7 +60,7 @@ export interface IJob extends Document {
     type: "YEAR" | "MONTH" | "HOUR";
   };
   benefits?: string[];
-  workModes?: ("ONSITE" | "REMOTE" | "HYBRID")[];
+  workModes?: WorkMode[];
   visaSponsorship?: boolean;
   equity?: {
     min?: number;
@@ -99,7 +119,7 @@ const jobSchema = new Schema<IJob>(
     },
     employmentType: {
       type: String,
-      enum: ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERN", "TEMPORARY"],
+      enum: EmploymentType,
       required: true,
     },
     industry: {
@@ -110,7 +130,7 @@ const jobSchema = new Schema<IJob>(
       currency: { type: String },
       min: { type: Number },
       max: { type: Number },
-      type: { type: String, enum: ["YEAR", "MONTH", "HOUR"] },
+      type: { type: String, enum: JobSalaryType },
     },
     benefits: {
       type: [String],
@@ -118,7 +138,7 @@ const jobSchema = new Schema<IJob>(
     },
     workModes: {
       type: [String],
-      enum: ["ONSITE", "REMOTE", "HYBRID"],
+      enum: WorkMode,
       default: undefined,
     },
     visaSponsorship: {
@@ -140,16 +160,7 @@ const jobSchema = new Schema<IJob>(
     },
     educationalAttainment: {
       type: String,
-      enum: [
-        "NONE",
-        "HIGH_SCHOOL",
-        "ASSOCIATE",
-        "BACHELORS",
-        "MASTERS",
-        "DOCTORATE",
-        "VOCATIONAL",
-        "OTHER",
-      ],
+      enum: JobEducationalAttainment,
     },
     expiresAt: {
       type: Date,
@@ -165,7 +176,7 @@ const jobSchema = new Schema<IJob>(
     },
     applyMethod: {
       type: String,
-      enum: ["BOOKIPI", "LINKEDIN", "SEEK", "INDEED"],
+      enum: ApplicationSourceCode,
     },
     externalRefs: {
       linkedin: { type: String, trim: true },
@@ -175,8 +186,8 @@ const jobSchema = new Schema<IJob>(
     },
     status: {
       type: String,
-      enum: ["DRAFT", "PUBLISHED", "PAUSED", "CLOSED"],
-      default: "DRAFT",
+      enum: JobStatus,
+      default: JobStatus.DRAFT,
       index: true,
     },
     publishedAt: {

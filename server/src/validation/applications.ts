@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { stageCodes } from "../models/Application.js";
 import {
   nonEmptyTrimmedString,
   objectIdString,
   optionalObjectIdString,
   singleStringValue,
 } from "./common.js";
+import { ApplicationStageCode } from "../models/Application.js";
 
 const limitSchema = z
   .union([z.string(), z.number(), z.undefined()])
@@ -45,7 +45,7 @@ const stageSchema = singleStringValue
   .transform((value) =>
     value === undefined || value.length === 0 ? undefined : value,
   )
-  .pipe(z.enum(stageCodes).optional());
+  .pipe(z.nativeEnum(ApplicationStageCode).optional());
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
@@ -138,7 +138,7 @@ export const patchApplicationParamsSchema = getApplicationByIdParamsSchema;
 
 export const patchApplicationBodySchema = z
   .object({
-    stage: z.enum(stageCodes).optional(),
+    stage: z.nativeEnum(ApplicationStageCode).optional(),
   })
   .refine((data) => data.stage !== undefined, {
     message: "At least one field must be provided",

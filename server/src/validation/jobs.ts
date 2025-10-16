@@ -1,15 +1,13 @@
 import { z } from "zod";
-import { objectIdString, optionalObjectIdString, singleStringValue } from "./common.js";
+import {
+  objectIdString,
+  optionalObjectIdString,
+  singleStringValue,
+} from "./common.js";
+import { EmploymentType, JobStatus } from "../models/Job.js";
 
-const employmentTypeEnum = z.enum([
-  "FULL_TIME",
-  "PART_TIME",
-  "CONTRACT",
-  "INTERN",
-  "TEMPORARY",
-]);
-
-const jobStatusEnum = z.enum(["DRAFT", "PUBLISHED", "PAUSED", "CLOSED"]);
+const employmentTypeEnum = z.nativeEnum(EmploymentType);
+const jobStatusEnum = z.nativeEnum(JobStatus);
 
 const requiredString = singleStringValue.refine(
   (value): value is string => value !== undefined && value.length > 0,

@@ -6,8 +6,8 @@ import {
   getJobApplications,
   patchApplication,
   postApplicationNote,
-} from "../controllers/application.controller.js";
-import { validateRequest } from "../middleware/validateRequest.js";
+} from "../../controllers/application.controller.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
 import {
   createApplicationBodySchema,
   getApplicationByIdParamsSchema,
@@ -18,7 +18,7 @@ import {
   patchApplicationParamsSchema,
   postApplicationNoteBodySchema,
   postApplicationNoteParamsSchema,
-} from "../validation/applications.js";
+} from "../../validation/applications.js";
 
 const router = Router();
 

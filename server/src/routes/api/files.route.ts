@@ -1,8 +1,8 @@
 import { Router, raw } from "express";
-import env from "../config/env.js";
-import { uploadResume } from "../controllers/file.controller.js";
-import { validateRequest } from "../middleware/validateRequest.js";
-import { resumeUploadQuerySchema } from "../validation/files.js";
+import env from "../../config/env.js";
+import { uploadResume } from "../../controllers/file.controller.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
+import { resumeUploadQuerySchema } from "../../validation/files.js";
 
 const router = Router();
 

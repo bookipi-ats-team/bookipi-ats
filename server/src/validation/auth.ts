@@ -1,9 +1,14 @@
 import { z } from "zod";
 
-const userTypeSchema = z.enum(["applicant", "business"]);
+export enum LoginType {
+  Applicant = "applicant",
+  Business = "business",
+}
+
+const loginTypeSchema = z.nativeEnum(LoginType);
 
 export const loginBodySchema = z.object({
-  type: userTypeSchema,
+  type: loginTypeSchema,
 });
 
 export type SignupBody = z.infer<typeof loginBodySchema>;

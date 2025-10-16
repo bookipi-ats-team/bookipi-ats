@@ -1,4 +1,5 @@
-import { createHmac, timingSafeEqual } from "crypto";
+import { Applicant } from "../models/Applicant.js";
+import { NotFoundError } from "../errors/AppError.js";
 
 /**
  * Extracts the auth token from a Bearer authorization header.
@@ -8,7 +9,9 @@ export function extractAuthToken(
   authorization?: string | string[] | undefined,
 ): string | undefined {
   if (!authorization) return undefined;
-  const header = Array.isArray(authorization) ? authorization[0] : authorization;
+  const header = Array.isArray(authorization)
+    ? authorization[0]
+    : authorization;
   const match = header.match(/^\s*Bearer\s+(.+)$/i);
   return match ? match[1] : undefined;
 }
@@ -34,52 +37,44 @@ export function extractNameFromFullName(fullName?: string) {
   return { firstName, lastName };
 }
 
-export function base64UrlEncode(input: string | Buffer) {
-  return Buffer.isBuffer(input)
-    ? input.toString("base64url")
-    : Buffer.from(input).toString("base64url");
-}
+export async function getApplicantForAuthUser(me: {
+  userId?: string;
+  email?: string;
+}) {
+  // Try to find the applicant by authModule user id first, then by email
+  let applicant = null as any;
 
-export function signJwt(
-  payload: Record<string, any>,
-  secret: string,
-  expiresInSeconds = 60 * 60 * 24 * 7,
-) {
-  const header = { alg: "HS256", typ: "JWT" };
-  const now = Math.floor(Date.now() / 1000);
-  const body = { ...payload, iat: now, exp: now + expiresInSeconds };
-
-  const encodedHeader = base64UrlEncode(JSON.stringify(header));
-  const encodedBody = base64UrlEncode(JSON.stringify(body));
-  const data = `${encodedHeader}.${encodedBody}`;
-
-  const signature = createHmac("sha256", secret).update(data).digest("base64url");
-  return `${data}.${signature}`;
-}
-
-export function verifyJwt(token: string, secret: string) {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-
-    const [encodedHeader, encodedBody, signature] = parts;
-    const data = `${encodedHeader}.${encodedBody}`;
-
-    const expected = createHmac("sha256", secret).update(data).digest("base64url");
-
-    // timing-safe compare
-    const sigBuf = Buffer.from(signature);
-    const expBuf = Buffer.from(expected);
-    if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf)) return null;
-
-    const payloadJson = Buffer.from(encodedBody, "base64url").toString();
-    const payload = JSON.parse(payloadJson);
-
-    const now = Math.floor(Date.now() / 1000);
-    if (payload.exp && now >= payload.exp) return null;
-
-    return payload as Record<string, any>;
-  } catch (err) {
-    return null;
+  if (me.userId) {
+    applicant = await Applicant.findOne({ authModuleUserId: me.userId })
+      .read("secondaryPreferred")
+      .lean();
   }
+
+  if (!applicant) {
+    // If an applicant exists by email, link it to the authModule user id so subsequent requests are linked
+    const applicantByEmail = await Applicant.findOne({ email: me.email })
+      .read("secondaryPreferred")
+      .lean();
+
+    if (applicantByEmail) {
+      // Link if possible (non-destructive)
+      if (me.userId && !applicantByEmail.authModuleUserId) {
+        await Applicant.updateOne(
+          { _id: applicantByEmail._id },
+          { authModuleUserId: me.userId },
+        ).exec();
+        applicantByEmail.authModuleUserId = me.userId;
+      }
+      applicant = applicantByEmail;
+    }
+  }
+
+  if (!applicant) {
+    // Local profile missing — require user to sign up locally first
+    throw new NotFoundError(
+      "Applicant profile not found, please complete signup.",
+    );
+  }
+
+  return applicant;
 }

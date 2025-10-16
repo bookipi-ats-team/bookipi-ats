@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { ResumeFile } from "../models/ResumeFile.js";
+import { ResumeFile, ResumeParseStatus } from "../models/ResumeFile.js";
 import { downloadFileFromDrive } from "./googleDrive.js";
 import { parseResume, ResumeParsingError } from "./resumeParser.js";
 import { workerConfig } from "../config/worker.js";
@@ -96,7 +96,7 @@ const processResumeFile = async (resumeFileId: Types.ObjectId) => {
     return;
   }
 
-  resumeFile.parseStatus = "processing";
+  resumeFile.parseStatus = ResumeParseStatus.PROCESSING;
   resumeFile.parseError = undefined;
   resumeFile.parseAttempts = (resumeFile.parseAttempts ?? 0) + 1;
 
@@ -115,7 +115,7 @@ const processResumeFile = async (resumeFileId: Types.ObjectId) => {
 
     resumeFile.parsedText = parsed.text;
     resumeFile.parsedSummary = parsed.summary;
-    resumeFile.parseStatus = "ready";
+    resumeFile.parseStatus = ResumeParseStatus.READY;
     resumeFile.parsedAt = new Date();
     resumeFile.parseError = undefined;
 
@@ -132,7 +132,9 @@ const processResumeFile = async (resumeFileId: Types.ObjectId) => {
 
     resumeFile.parseError = truncateMessage(message);
     const canAttemptAgain = canRetry(attempts);
-    resumeFile.parseStatus = canAttemptAgain ? "pending" : "failed";
+    resumeFile.parseStatus = canAttemptAgain
+      ? ResumeParseStatus.PENDING
+      : ResumeParseStatus.FAILED;
 
     if (!canAttemptAgain) {
       resumeFile.parsedText = undefined;

@@ -7,24 +7,20 @@ import {
   closeJob,
   updateJob,
   getJobs,
-} from "../controllers/jobs.controller.js";
-import { validateRequest } from "../middleware/validateRequest.js";
+} from "../../controllers/jobs.controller.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
 import {
   createJobBodySchema,
   jobIdParamsSchema,
   updateJobBodySchema,
   getJobsQuerySchema,
-} from "../validation/jobs.js";
+} from "../../validation/jobs.js";
 
 const router = Router();
 
 router.post("/", validateRequest({ body: createJobBodySchema }), createJob);
 router.get("/", validateRequest({ query: getJobsQuerySchema }), getJobs);
-router.get(
-  "/:id",
-  validateRequest({ params: jobIdParamsSchema }),
-  getJobById,
-);
+router.get("/:id", validateRequest({ params: jobIdParamsSchema }), getJobById);
 router.patch(
   "/:id",
   validateRequest({

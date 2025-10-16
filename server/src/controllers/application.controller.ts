@@ -1,6 +1,5 @@
 import type { RequestHandler } from "express";
 import { Types } from "mongoose";
-import { Applicant } from "../models/Applicant.js";
 import { Application } from "../models/Application.js";
 import { Job } from "../models/Job.js";
 import { Note } from "../models/Note.js";
@@ -24,17 +23,6 @@ const buildCursorFilter = (cursor?: string) => {
   }
 
   return { _id: { $gt: new Types.ObjectId(cursor) } };
-};
-
-const normalizeOptionalField = (
-  value: string | undefined,
-): string | undefined => {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
 };
 
 export const getJobApplications: RequestHandler<
@@ -87,93 +75,14 @@ export const getApplicationById: RequestHandler = async (req, res) => {
   res.status(200).json(application);
 };
 
-// const findOrCreateApplicant = async (
-//   jobBusinessId: Types.ObjectId,
-//   payload: CreateApplicationBody["applicant"],
-// ) => {
-//   if (payload.id) {
-//     const application = await Application.findById(payload.id).exec();
-//
-//     if (application) {
-//       return { error: "Application already exists" } as const;
-//     }
-//
-//     if (
-//       application.businessId &&
-//       !application.businessId.equals(jobBusinessId)
-//     ) {
-//       return { error: "Applicant belongs to a different business" } as const;
-//     }
-//
-//     if (!applicant.businessId) {
-//       applicant.businessId = jobBusinessId;
-//       const phone = normalizeOptionalField(payload.phone);
-//       const location = normalizeOptionalField(payload.location);
-//
-//       if (phone !== undefined) {
-//         applicant.phone = phone;
-//       }
-//       if (location !== undefined) {
-//         applicant.location = location;
-//       }
-//
-//       await applicant.save();
-//     }
-//
-//     return { applicant } as const;
-//   }
-//
-//   const email = payload.email!.trim().toLowerCase();
-//   const name = payload.name!.trim();
-//   const phone = normalizeOptionalField(payload.phone);
-//   const location = normalizeOptionalField(payload.location);
-//
-//   const existingApplicant = await Applicant.findOne({
-//     businessId: jobBusinessId,
-//     email,
-//   }).exec();
-//
-//   if (existingApplicant) {
-//     existingApplicant.name = name;
-//
-//     if (phone !== undefined) {
-//       existingApplicant.phone = phone;
-//     }
-//
-//     if (location !== undefined) {
-//       existingApplicant.location = location;
-//     }
-//
-//     await existingApplicant.save();
-//
-//     return { applicant: existingApplicant } as const;
-//   }
-
-//   const applicant = new Applicant({
-//     businessId: jobBusinessId,
-//     email,
-//     name,
-//     phone,
-//     location,
-//   });
-//
-//   await applicant.save();
-//
-//   return { applicant } as const;
-// };
-
 export const createApplication: RequestHandler<
   unknown,
   unknown,
-  CreateApplicationBody
+  CreateApplicationBody,
+  unknown
 > = async (req, res) => {
-  const {
-    jobId,
-    // applicant: applicantPayload,
-    resumeFileId,
-  } = req.body;
-
   const applicant = req.app.locals.applicant;
+  const { jobId, resumeFileId } = req.body;
 
   const job = await Job.findById(jobId).exec();
 
@@ -182,18 +91,6 @@ export const createApplication: RequestHandler<
   }
 
   const jobBusinessId = new Types.ObjectId(job.businessId.toString());
-
-  // const applicantResult = await Applicant.findOne({
-  //   jobBusinessId,
-  //   applicantPayload,
-  // });
-
-  // if ("error" in applicantResult) {
-  //   res.status(400).json({ error: applicantResult.error });
-  //   return;
-  // }
-
-  // const { applicant } = applicantResult;
 
   let resumeObjectId: Types.ObjectId | undefined;
 

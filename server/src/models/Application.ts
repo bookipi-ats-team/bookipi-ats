@@ -1,26 +1,22 @@
 import { Schema, model, type Document, type Types } from "mongoose";
 
-export const stageCodes = [
-  "NEW",
-  "SCREEN",
-  "INTERVIEW",
-  "OFFER",
-  "HIRED",
-  "REJECTED",
-] as const;
+export enum ApplicationStageCode {
+  NEW = "NEW",
+  SCREEN = "SCREEN",
+  INTERVIEW = "INTERVIEW",
+  OFFER = "OFFER",
+  HIRED = "HIRED",
+  REJECTED = "REJECTED",
+}
 
-export type StageCode = (typeof stageCodes)[number];
-
-export const sourceCodes = [
-  "BOOKIPI",
-  "LINKEDIN",
-  "SEEK",
-  "INDEED",
-  "GLASSDOOR",
-  "REFERRAL",
-] as const;
-
-export type SourceCode = (typeof sourceCodes)[number];
+export enum ApplicationSourceCode {
+  BOOKIPI = "BOOKIPI",
+  LINKEDIN = "LINKEDIN",
+  SEEK = "SEEK",
+  INDEED = "INDEED",
+  GLASSDOOR = "GLASSDOOR",
+  REFERRAL = "REFERRAL",
+}
 
 export type Application = {
   _id: Types.ObjectId;
@@ -28,8 +24,8 @@ export type Application = {
   jobId: Types.ObjectId;
   businessId: Types.ObjectId;
 
-  source: SourceCode;
-  stage: StageCode;
+  source: ApplicationSourceCode;
+  stage: ApplicationStageCode;
 
   score?: number;
   cvScore?: number;
@@ -48,8 +44,8 @@ export interface IApplication extends Document {
   jobId: Types.ObjectId;
   businessId: Types.ObjectId;
 
-  source: SourceCode;
-  stage: StageCode;
+  source: ApplicationSourceCode;
+  stage: ApplicationStageCode;
 
   score?: number;
   cvScore?: number;
@@ -85,14 +81,14 @@ const applicationSchema = new Schema<IApplication>(
     },
     source: {
       type: String,
-      enum: sourceCodes,
-      default: "BOOKIPI",
+      enum: ApplicationSourceCode,
+      default: ApplicationSourceCode.BOOKIPI,
       index: true,
     },
     stage: {
       type: String,
-      enum: stageCodes,
-      default: "NEW",
+      enum: ApplicationStageCode,
+      default: ApplicationStageCode.NEW,
       index: true,
     },
     score: {
@@ -150,4 +146,7 @@ applicationSchema.virtual("resumeFile", {
   justOne: true,
 });
 
-export const Application = model<IApplication>("Application", applicationSchema);
+export const Application = model<IApplication>(
+  "Application",
+  applicationSchema,
+);

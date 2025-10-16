@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import { Job, type IJob } from "../models/Job.js";
+import { Job, JobStatus, type IJob } from "../models/Job.js";
 import { Business } from "../models/Business.js";
 import { NotFoundError } from "../errors/AppError.js";
 import type {
@@ -68,7 +68,7 @@ export const publishJob: RequestHandler = async (req, res) => {
 
   const job = await findJobByIdOrThrow(id);
 
-  job.status = "PUBLISHED";
+  job.status = JobStatus.PUBLISHED;
   setPublishedAtIfNeeded(job, "PUBLISHED");
   await job.save();
 
@@ -80,7 +80,7 @@ export const pauseJob: RequestHandler = async (req, res) => {
 
   const job = await findJobByIdOrThrow(id);
 
-  job.status = "PAUSED";
+  job.status = JobStatus.PAUSED;
   await job.save();
 
   res.status(200).json({ status: job.status });
@@ -91,7 +91,7 @@ export const closeJob: RequestHandler = async (req, res) => {
 
   const job = await findJobByIdOrThrow(id);
 
-  job.status = "CLOSED";
+  job.status = JobStatus.CLOSED;
   await job.save();
 
   res.status(200).json({ status: job.status });
