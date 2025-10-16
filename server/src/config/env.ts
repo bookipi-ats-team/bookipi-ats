@@ -20,6 +20,7 @@ const schema = z.object({
   MAX_RESUME_FILE_SIZE: z.coerce.number().default(15 * 1024 * 1024),
   ALLOWED_RESUME_MIME_TYPES: z.string().optional(),
   AUTH_MODULE_SERVER_URL: z.string(),
+  AUTH_MODULE_APP_ID: z.string(),
   GOOGLE_DRIVE_CREDENTIALS_BASE64: z.string().optional(),
   GOOGLE_DRIVE_FOLDER_ID: z.string().optional(),
   GOOGLE_DRIVE_IMPERSONATED_USER: z.string().optional(),
@@ -45,6 +46,7 @@ const env = {
   allowedResumeMimeTypes,
   authModule: {
     serverUrl: parsed.AUTH_MODULE_SERVER_URL,
+    appId: parsed.AUTH_MODULE_APP_ID,
   },
   googleDriveCredentialsBase64: parsed.GOOGLE_DRIVE_CREDENTIALS_BASE64,
   googleDriveFolderId: parsed.GOOGLE_DRIVE_FOLDER_ID,

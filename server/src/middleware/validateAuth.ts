@@ -40,6 +40,7 @@ export const validateAuth: EnhanceRequest<Locals> = async (req, _res, next) => {
   const applicant = await executeIfAsync(type === "applicant", async () => {
     const applicant = await getApplicantForAuthUser(me);
     req.app.locals.applicant = applicant;
+    return applicant;
   });
 
   if (applicant) {
@@ -50,6 +51,7 @@ export const validateAuth: EnhanceRequest<Locals> = async (req, _res, next) => {
     // TODO: Update business logic
     const business = "business";
     req.app.locals.business = business;
+    return business;
   });
 
   if (!business && !applicant) {

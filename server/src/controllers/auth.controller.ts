@@ -3,17 +3,12 @@ import { RequestHandler } from "express";
 import env from "../config/env.js";
 import { extractAuthToken, extractNameFromFullName } from "../utils/auth.js";
 import { Applicant } from "../models/Applicant.js";
-import { SignupBody } from "../validation/auth.js";
 import { executeIfAsync } from "../utils/executeIf.js";
 import { UnauthorizedError, NotFoundError } from "../errors/AppError.js";
 
-export const login: RequestHandler<unknown, unknown, SignupBody> = async (
-  req,
-  res,
-) => {
+export const login: RequestHandler = async (req, res) => {
   const authToken = extractAuthToken(req.headers.authorization);
-
-  const type = req.body.type;
+  const type = req.headers["x-user-type"];
 
   if (!authToken) {
     throw new UnauthorizedError("Missing or invalid Authorization header");

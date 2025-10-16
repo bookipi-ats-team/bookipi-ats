@@ -146,7 +146,7 @@ const certificationSchema = new Schema<Certification>(
 
 const applicantSchema = new Schema<IApplicant>(
   {
-    authModuleUserId: { type: String, trim: true, index: true },
+    authModuleUserId: { type: String, trim: true, index: true, select: false },
     email: {
       type: String,
       required: true,
