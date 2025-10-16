@@ -12,45 +12,7 @@ import {
 } from "../services/resumeStorage.js";
 import { enqueueResumeParsing } from "../services/resumeProcessing.js";
 import type { ResumeUploadQuery } from "../validation/files.js";
-
-const errorStatusMap = new Map<string, number>([
-  ["Unsupported resume mime type", 400],
-  ["Resume file size is invalid", 400],
-]);
-
-const handleError = (res: Parameters<RequestHandler>[1], error: unknown) => {
-  if (error instanceof Error) {
-    const status = errorStatusMap.get(error.message);
-
-    if (status) {
-      res.status(status).json({ error: error.message });
-      return;
-    }
-
-    res.status(500).json({ error: "Internal server error" });
-    return;
-  }
-
-  res.status(500).json({ error: "Internal server error" });
-};
-
-const ensureEntitiesExist = async (applicantId?: string, jobId?: string) => {
-  const applicantRecord = applicantId
-    ? await Applicant.findById(applicantId).exec()
-    : null;
-
-  if (applicantId && !applicantRecord) {
-    return { error: "Applicant not found" };
-  }
-
-  const jobRecord = jobId ? await Job.findById(jobId).exec() : null;
-
-  if (jobId && !jobRecord) {
-    return { error: "Job not found" };
-  }
-
-  return { applicantRecord, jobRecord };
-};
+import { NotFoundError, BadRequestError } from "../errors/AppError.js";
 
 const mimeExtensionMap = new Map<string, string>([
   ["application/pdf", "pdf"],
@@ -89,46 +51,54 @@ const resolveMimeType = (req: Parameters<RequestHandler>[0]) => {
   return trimmed.length > 0 ? trimmed : null;
 };
 
+const ensureEntitiesExist = async (applicantId?: string, jobId?: string) => {
+  const applicantRecord = applicantId
+    ? await Applicant.findById(applicantId).exec()
+    : null;
+
+  if (applicantId && !applicantRecord) {
+    throw new NotFoundError("Applicant not found");
+  }
+
+  const jobRecord = jobId ? await Job.findById(jobId).exec() : null;
+
+  if (jobId && !jobRecord) {
+    throw new NotFoundError("Job not found");
+  }
+
+  return { applicantRecord, jobRecord };
+};
+
 export const uploadResume: RequestHandler = async (req, res) => {
   const { applicantId, jobId, originalName } = req.query as ResumeUploadQuery;
 
   if (!(req.body instanceof Buffer)) {
-    res.status(400).json({ error: "Resume upload must be binary data" });
-    return;
+    throw new BadRequestError("Resume upload must be binary data");
   }
 
   const fileBuffer = req.body;
 
   if (fileBuffer.length === 0) {
-    res.status(400).json({ error: "Resume file must include data" });
-    return;
+    throw new BadRequestError("Resume file must include data");
   }
 
   const mimeType = resolveMimeType(req);
 
   if (!mimeType) {
-    res.status(400).json({ error: "Resume mime type is required" });
-    return;
+    throw new BadRequestError("Resume mime type is required");
   }
 
   if (!env.allowedResumeMimeTypes.has(mimeType)) {
-    res.status(400).json({ error: "Unsupported resume mime type" });
-    return;
+    throw new BadRequestError("Unsupported resume mime type");
   }
 
   const sizeBytes = fileBuffer.byteLength;
 
   if (sizeBytes <= 0 || sizeBytes > env.maxResumeFileSize) {
-    res.status(400).json({ error: "Resume file size is invalid" });
-    return;
+    throw new BadRequestError("Resume file size is invalid");
   }
 
   const entityCheck = await ensureEntitiesExist(applicantId, jobId);
-
-  if ("error" in entityCheck) {
-    res.status(404).json({ error: entityCheck.error });
-    return;
-  }
 
   const { applicantRecord, jobRecord } = entityCheck;
   const fileId = randomUUID();
@@ -172,6 +142,7 @@ export const uploadResume: RequestHandler = async (req, res) => {
       );
     }
 
-    handleError(res, error);
+    // Bubble up the error to global handler
+    throw error;
   }
 };

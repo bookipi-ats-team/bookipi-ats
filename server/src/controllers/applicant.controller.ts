@@ -5,6 +5,7 @@ import type {
   GetApplicantByIdParams,
   GetApplicantsQuery,
 } from "../validation/applicants.js";
+import { NotFoundError } from "../errors/AppError.js";
 
 const buildSearchRegex = (value: string | undefined): RegExp | undefined => {
   if (!value) {
@@ -21,57 +22,46 @@ export const getApplicants: RequestHandler<
   unknown,
   GetApplicantsQuery
 > = async (req, res) => {
-  try {
-    const { businessId, q, cursor, limit } = req.query;
+  const { businessId, q, cursor, limit } = req.query;
 
-    const query = Applicant.find({
-      ...(businessId ? { businessId: new Types.ObjectId(businessId) } : {}),
-    }).sort({ _id: 1 });
+  const query = Applicant.find({
+    ...(businessId ? { businessId: new Types.ObjectId(businessId) } : {}),
+  }).sort({ _id: 1 });
 
-    const search = buildSearchRegex(q);
+  const search = buildSearchRegex(q);
 
-    if (search) {
-      query.where({ $or: [{ name: search }, { email: search }] });
-    }
-
-    if (cursor) {
-      query.where({ _id: { $gt: new Types.ObjectId(cursor) } });
-    }
-
-    const applicants = await query.limit(limit + 1).exec();
-    const hasMore = applicants.length > limit;
-    const items = hasMore ? applicants.slice(0, limit) : applicants;
-    const nextCursorDoc = hasMore ? applicants[limit] : undefined;
-    const nextCursor = nextCursorDoc?.id;
-
-    res.status(200).json(
-      nextCursor
-        ? {
-            items,
-            nextCursor,
-          }
-        : { items },
-    );
-  } catch (error) {
-    console.error("Failed to fetch applicants", error);
-    res.status(500).json({ error: "Internal server error" });
+  if (search) {
+    query.where({ $or: [{ name: search }, { email: search }] });
   }
+
+  if (cursor) {
+    query.where({ _id: { $gt: new Types.ObjectId(cursor) } });
+  }
+
+  const applicants = await query.limit(limit + 1).exec();
+  const hasMore = applicants.length > limit;
+  const items = hasMore ? applicants.slice(0, limit) : applicants;
+  const nextCursorDoc = hasMore ? applicants[limit] : undefined;
+  const nextCursor = nextCursorDoc?.id;
+
+  res.status(200).json(
+    nextCursor
+      ? {
+          items,
+          nextCursor,
+        }
+      : { items },
+  );
 };
 
 export const getApplicantById: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params as GetApplicantByIdParams;
+  const { id } = req.params as GetApplicantByIdParams;
 
-    const applicant = await Applicant.findById(id).exec();
+  const applicant = await Applicant.findById(id).exec();
 
-    if (!applicant) {
-      res.status(404).json({ error: "Applicant not found" });
-      return;
-    }
-
-    res.status(200).json(applicant);
-  } catch (error) {
-    console.error("Failed to fetch applicant", error);
-    res.status(500).json({ error: "Internal server error" });
+  if (!applicant) {
+    throw new NotFoundError("Applicant not found");
   }
+
+  res.status(200).json(applicant);
 };

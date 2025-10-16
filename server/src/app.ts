@@ -1,12 +1,14 @@
-import express, { Router } from "express";
 import cors from "cors";
+import express, { Router } from "express";
+import "express-async-errors";
 import helmet from "helmet";
-import businessRoutes from "./routes/business.route.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import aiRoutes from "./routes/ai.route.js";
 import applicantRoutes from "./routes/applicants.route.js";
 import applicationRoutes from "./routes/applications.route.js";
-import jobRoutes from "./routes/jobs.route.js";
-import aiRoutes from "./routes/ai.route.js";
+import businessRoutes from "./routes/business.route.js";
 import filesRoutes from "./routes/files.route.js";
+import jobRoutes from "./routes/jobs.route.js";
 import publicRoutes from "./routes/public.route.js";
 
 const app = express();
@@ -29,5 +31,8 @@ apiRouter.use("/ai", aiRoutes);
 apiRouter.use("/files", filesRoutes);
 
 app.use("/api/v1", apiRouter);
+
+// WARN: Global error handler (must be last)
+app.use(errorHandler);
 
 export default app;

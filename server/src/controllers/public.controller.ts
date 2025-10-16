@@ -4,6 +4,7 @@ import { Applicant } from "../models/Applicant.js";
 import { Application } from "../models/Application.js";
 import { Job, type IJob } from "../models/Job.js";
 import { ResumeFile } from "../models/ResumeFile.js";
+import { NotFoundError } from "../errors/AppError.js";
 import type {
   GetPublicApplicationsParams,
   GetPublicJobParams,
@@ -110,77 +111,40 @@ export const getPublicJobs: RequestHandler<
   unknown,
   GetPublicJobsQuery
 > = async (req, res) => {
-  try {
-    const query = req.query;
-    const filter = buildJobsFilter(query);
-    const limit = (query.limit as number | undefined) ?? 20;
+  const query = req.query;
+  const filter = buildJobsFilter(query);
+  const limit = (query.limit as number | undefined) ?? 20;
 
-    const jobs = await Job.find(filter)
-      .populate("businessId", "name description industry")
-      .sort({ _id: 1 })
-      .limit(limit + 1)
-      .exec();
+  const jobs = await Job.find(filter)
+    .populate("businessId", "name description industry")
+    .sort({ _id: 1 })
+    .limit(limit + 1)
+    .exec();
 
-    const hasMore = jobs.length > limit;
-    const items = hasMore ? jobs.slice(0, limit) : jobs;
-    const nextCursor = hasMore ? items[items.length - 1].id : undefined;
+  const hasMore = jobs.length > limit;
+  const items = hasMore ? jobs.slice(0, limit) : jobs;
+  const nextCursor = hasMore ? items[items.length - 1].id : undefined;
 
-    // Check if there are previous items (when cursor is provided and we have items)
-    let previousCursor: string | undefined;
-    if (query.cursor && items.length > 0) {
-      // Check if there are items before the first item in current results
-      const beforeFilter = {
-        ...buildJobsFilter({ ...query, cursor: undefined }),
-        _id: { $lt: new Types.ObjectId(items[0].id) },
-      };
+  // Check if there are previous items (when cursor is provided and we have items)
+  let previousCursor: string | undefined;
+  if (query.cursor && items.length > 0) {
+    // Check if there are items before the first item in current results
+    const beforeFilter = {
+      ...buildJobsFilter({ ...query, cursor: undefined }),
+      _id: { $lt: new Types.ObjectId(items[0].id) },
+    };
 
-      const hasPrevious = await Job.exists(beforeFilter).exec();
-      if (hasPrevious) {
-        previousCursor = items[0].id;
-      }
+    const hasPrevious = await Job.exists(beforeFilter).exec();
+    if (hasPrevious) {
+      previousCursor = items[0].id;
     }
-
-    // Transform jobs to include business field
-    const transformedItems = items.map((job) => {
-      const jobObj = job.toObject();
-      const businessData = job.businessId as any; // Populated business data
-      return {
-        ...jobObj,
-        businessId: job._id,
-        business: {
-          name: businessData.name,
-          description: businessData.description,
-          industry: businessData.industry,
-        },
-      };
-    });
-
-    const response: any = { items: transformedItems };
-    if (nextCursor) response.nextCursor = nextCursor;
-    if (previousCursor) response.previousCursor = previousCursor;
-
-    res.status(200).json(response);
-  } catch (error) {
-    console.error("Failed to fetch public jobs", error);
-    res.status(500).json({ error: "Internal server error" });
   }
-};
 
-export const getPublicJobById: RequestHandler = async (req, res) => {
-  try {
-    const { jobId } = req.params as GetPublicJobParams;
-
-    const job = await ensurePublishedJob(jobId);
-
-    if (!job) {
-      res.status(404).json({ error: "Job not found" });
-      return;
-    }
-
-    // Transform job to include business field
+  // Transform jobs to include business field
+  const transformedItems = items.map((job) => {
     const jobObj = job.toObject();
     const businessData = job.businessId as any; // Populated business data
-    const transformedJob = {
+    return {
       ...jobObj,
       businessId: job._id,
       business: {
@@ -189,99 +153,113 @@ export const getPublicJobById: RequestHandler = async (req, res) => {
         industry: businessData.industry,
       },
     };
+  });
 
-    res.status(200).json(transformedJob);
-  } catch (error) {
-    console.error("Failed to fetch public job", error);
-    res.status(500).json({ error: "Internal server error" });
+  const response: any = { items: transformedItems };
+  if (nextCursor) response.nextCursor = nextCursor;
+  if (previousCursor) response.previousCursor = previousCursor;
+
+  res.status(200).json(response);
+};
+
+export const getPublicJobById: RequestHandler = async (req, res) => {
+  const { jobId } = req.params as GetPublicJobParams;
+
+  const job = await ensurePublishedJob(jobId);
+
+  if (!job) {
+    throw new NotFoundError("Job not found");
   }
+
+  // Transform job to include business field
+  const jobObj = job.toObject();
+  const businessData = job.businessId as any; // Populated business data
+  const transformedJob = {
+    ...jobObj,
+    businessId: job._id,
+    business: {
+      name: businessData.name,
+      description: businessData.description,
+      industry: businessData.industry,
+    },
+  };
+
+  res.status(200).json(transformedJob);
 };
 
 export const postPublicApply: RequestHandler = async (req, res) => {
-  try {
-    const {
-      jobId,
-      applicant: applicantPayload,
-      resumeFileId,
-    } = req.body as PostPublicApplyBody;
+  const {
+    jobId,
+    applicant: applicantPayload,
+    resumeFileId,
+  } = req.body as PostPublicApplyBody;
 
-    const job = await ensurePublishedJob(jobId);
+  const job = await ensurePublishedJob(jobId);
 
-    if (!job) {
-      res.status(404).json({ error: "Job not found" });
-      return;
-    }
+  if (!job) {
+    throw new NotFoundError("Job not found");
+  }
 
-    const businessId = job.businessId;
-    const applicant = await findOrCreateApplicant(businessId, applicantPayload);
+  const businessId = job.businessId;
+  const applicant = await findOrCreateApplicant(businessId, applicantPayload);
 
-    let resumeObjectId: Types.ObjectId | undefined;
+  let resumeObjectId: Types.ObjectId | undefined;
 
-    if (resumeFileId) {
-      resumeObjectId = new Types.ObjectId(resumeFileId);
-      const resumeExists = await ResumeFile.exists({
-        _id: resumeObjectId,
-      }).exec();
-
-      if (!resumeExists) {
-        res.status(404).json({ error: "Resume file not found" });
-        return;
-      }
-    }
-
-    const existingApplication = await Application.findOne({
-      jobId: job._id,
-      applicantId: applicant._id,
+  if (resumeFileId) {
+    resumeObjectId = new Types.ObjectId(resumeFileId);
+    const resumeExists = await ResumeFile.exists({
+      _id: resumeObjectId,
     }).exec();
 
-    if (existingApplication) {
-      if (resumeObjectId) {
-        existingApplication.resumeFileId = resumeObjectId;
-        await existingApplication.save();
-      }
+    if (!resumeExists) {
+      throw new NotFoundError("Resume file not found");
+    }
+  }
 
-      res.status(200).json(existingApplication);
-      return;
+  const existingApplication = await Application.findOne({
+    jobId: job._id,
+    applicantId: applicant._id,
+  }).exec();
+
+  if (existingApplication) {
+    if (resumeObjectId) {
+      existingApplication.resumeFileId = resumeObjectId;
+      await existingApplication.save();
     }
 
-    const application = await Application.create({
-      jobId: job._id,
-      businessId,
-      applicantId: applicant._id,
-      stage: "NEW",
-      resumeFileId: resumeObjectId,
-    });
-
-    res.status(200).json(application);
-  } catch (error) {
-    console.error("Failed to create public application", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(200).json(existingApplication);
+    return;
   }
+
+  const application = await Application.create({
+    jobId: job._id,
+    businessId,
+    applicantId: applicant._id,
+    stage: "NEW",
+    resumeFileId: resumeObjectId,
+  });
+
+  res.status(200).json(application);
 };
 
 export const getPublicApplications: RequestHandler = async (req, res) => {
-  try {
-    const { email } = req.params as GetPublicApplicationsParams;
+  const { email } = req.params as GetPublicApplicationsParams;
 
-    const applicants = await Applicant.find({ email }).select("_id").exec();
+  const applicants = await Applicant.find({ email }).select("_id").exec();
 
-    if (applicants.length === 0) {
-      res.status(200).json({ items: [] });
-      return;
-    }
-
-    const applicantIds = applicants.map((applicant) => applicant._id);
-
-    const applications = await Application.find({
-      applicantId: { $in: applicantIds },
-    })
-      .sort({ createdAt: -1 })
-      .populate("job")
-      .exec();
-
-    res.status(200).json({ items: applications });
-  } catch (error) {
-    console.error("Failed to fetch public applications", error);
-    res.status(500).json({ error: "Internal server error" });
+  if (applicants.length === 0) {
+    res.status(200).json({ items: [] });
+    return;
   }
+
+  const applicantIds = applicants.map((applicant) => applicant._id);
+
+  const applications = await Application.find({
+    applicantId: { $in: applicantIds },
+  })
+    .sort({ createdAt: -1 })
+    .populate("job")
+    .exec();
+
+  res.status(200).json({ items: applications });
 };

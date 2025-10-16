@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
 import type { ZodType } from "zod";
 import { ZodError } from "zod";
+import { ValidationError } from "../errors/AppError.js";
 
 interface ValidationSchemas {
   readonly body?: ZodType<unknown>;
@@ -29,11 +30,10 @@ export const validateRequest =
         const result = schemas.body.safeParse(req.body);
 
         if (!result.success) {
-          res.status(400).json({
-            error: "Invalid request body",
-            details: formatIssues(result.error),
-          });
-          return;
+          throw new ValidationError(
+            "Invalid request body",
+            formatIssues(result.error),
+          );
         }
 
         req.body = result.data as typeof req.body;
@@ -43,11 +43,10 @@ export const validateRequest =
         const result = schemas.query.safeParse(req.query);
 
         if (!result.success) {
-          res.status(400).json({
-            error: "Invalid request query",
-            details: formatIssues(result.error),
-          });
-          return;
+          throw new ValidationError(
+            "Invalid request query",
+            formatIssues(result.error),
+          );
         }
 
         req.query = result.data as typeof req.query;
@@ -57,11 +56,10 @@ export const validateRequest =
         const result = schemas.params.safeParse(req.params);
 
         if (!result.success) {
-          res.status(400).json({
-            error: "Invalid request params",
-            details: formatIssues(result.error),
-          });
-          return;
+          throw new ValidationError(
+            "Invalid request params",
+            formatIssues(result.error),
+          );
         }
 
         req.params = result.data as typeof req.params;
@@ -69,7 +67,6 @@ export const validateRequest =
 
       next();
     } catch (error) {
-      console.error("Failed to validate request", error);
-      res.status(500).json({ error: "Internal server error" });
+      next(error);
     }
   };

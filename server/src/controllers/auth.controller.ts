@@ -5,6 +5,7 @@ import { extractAuthToken, extractNameFromFullName } from "../utils/auth.js";
 import { Applicant } from "../models/Applicant.js";
 import { SignupBody } from "../validation/auth.js";
 import { executeIfAsync } from "../utils/executeIf.js";
+import { UnauthorizedError, NotFoundError } from "../errors/AppError.js";
 
 export const login: RequestHandler<unknown, unknown, SignupBody> = async (
   req,
@@ -15,9 +16,7 @@ export const login: RequestHandler<unknown, unknown, SignupBody> = async (
   const type = req.body.type;
 
   if (!authToken) {
-    return res
-      .status(401)
-      .json({ message: "Missing or invalid Authorization header" });
+    throw new UnauthorizedError("Missing or invalid Authorization header");
   }
 
   const authClient = new SessionClient(
@@ -28,7 +27,7 @@ export const login: RequestHandler<unknown, unknown, SignupBody> = async (
   const me = await authClient.auth.me();
 
   if (!me || !me.email) {
-    return res.status(500).json({ message: "User not found" });
+    throw new NotFoundError("User not found");
   }
 
   const returnedApplicant = await executeIfAsync(

@@ -23,12 +23,6 @@ const schema = z.object({
   GOOGLE_DRIVE_CREDENTIALS_BASE64: z.string().optional(),
   GOOGLE_DRIVE_FOLDER_ID: z.string().optional(),
   GOOGLE_DRIVE_IMPERSONATED_USER: z.string().optional(),
-  JWT_SECRET: z.string(),
-  JWT_EXPIRY_SECONDS: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(60 * 60 * 24 * 7),
 });
 
 const parsed = schema.parse(process.env);
@@ -55,8 +49,6 @@ const env = {
   googleDriveCredentialsBase64: parsed.GOOGLE_DRIVE_CREDENTIALS_BASE64,
   googleDriveFolderId: parsed.GOOGLE_DRIVE_FOLDER_ID,
   googleDriveImpersonatedUser: parsed.GOOGLE_DRIVE_IMPERSONATED_USER,
-  jwtSecret: parsed.JWT_SECRET,
-  jwtExpirySeconds: parsed.JWT_EXPIRY_SECONDS,
 } as const;
 
 export default env;
