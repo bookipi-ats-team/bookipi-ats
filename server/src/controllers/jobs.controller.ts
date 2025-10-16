@@ -222,7 +222,7 @@ export const getJobs: RequestHandler<
   const nextCursor = hasMore ? items[items.length - 1].id : undefined;
 
   res.status(200).json({
-    items,
+    jobs: items,
     nextCursor,
   });
 };

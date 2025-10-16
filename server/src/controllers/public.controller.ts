@@ -28,23 +28,46 @@ const buildJobsFilter = (query: GetPublicJobsQuery) => {
     status: "PUBLISHED",
   };
 
-  if (query.q) {
+  if (query.keyword) {
     filter.$or = [
-      { title: { $regex: query.q, $options: "i" } },
-      { description: { $regex: query.q, $options: "i" } },
+      { title: { $regex: query.keyword, $options: "i" } },
+      { description: { $regex: query.keyword, $options: "i" } },
+      { industry: { $regex: query.keyword, $options: "i" } },
+      { tags: { $regex: query.keyword, $options: "i" } },
     ];
   }
 
   if (query.location) {
-    filter.location = { $regex: query.location, $options: "i" };
+    // match any of the location subfields
+    const andArr = (filter.$and as any[]) || [];
+    andArr.push({
+      $or: [
+        { "location.city": { $regex: query.location, $options: "i" } },
+        { "location.region": { $regex: query.location, $options: "i" } },
+        { "location.country": { $regex: query.location, $options: "i" } },
+      ],
+    });
+    filter.$and = andArr;
   }
 
   if (query.industry) {
     filter.industry = { $regex: query.industry, $options: "i" };
   }
 
+  if (query.workModes && query.workModes.length > 0) {
+    filter.workModes = { $in: query.workModes };
+  }
+
   if (query.employmentType) {
     filter.employmentType = query.employmentType;
+  }
+
+  if (query.publishedAt) {
+    const start = new Date(query.publishedAt);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    filter.publishedAt = { $gte: start, $lt: end };
   }
 
   if (query.cursor) {
@@ -113,11 +136,21 @@ export const getPublicJobs: RequestHandler<
 > = async (req, res) => {
   const query = req.query;
   const filter = buildJobsFilter(query);
-  const limit = (query.limit as number | undefined) ?? 20;
+  const limit = query.limit;
+
+  // Determine sort
+  let sort: Record<string, 1 | -1> = { _id: 1 };
+  if (query.sortBy === "publishedAt") {
+    sort = { publishedAt: query.sortOrder === "asc" ? 1 : -1, _id: 1 };
+  } else if (query.sortBy === "relevance" && query.keyword) {
+    // Placeholder relevance: prioritize title matches then recent publishedAt
+    // Could be improved with text index later.
+    sort = { publishedAt: -1, _id: 1 };
+  }
 
   const jobs = await Job.find(filter)
     .populate("businessId", "name description industry")
-    .sort({ _id: 1 })
+    .sort(sort)
     .limit(limit + 1)
     .exec();
 

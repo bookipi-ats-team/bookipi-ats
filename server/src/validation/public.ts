@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EmploymentType } from "../models/Job.js";
+import { EmploymentType, WorkMode } from "../models/Job.js";
 import {
   nonEmptyTrimmedString,
   objectIdString,
@@ -8,6 +8,7 @@ import {
 } from "./common.js";
 
 const employmentTypeEnum = z.nativeEnum(EmploymentType);
+const workModeTypeEnum = z.nativeEnum(WorkMode);
 
 const optionalTrimmedString = singleStringValue.transform((value) =>
   value && value.length > 0 ? value : undefined,
@@ -39,11 +40,48 @@ const emailSchema = z
   })
   .transform((value) => value.toLowerCase());
 
+// Helper to parse a date string (ISO or yyyy-mm-dd)
+const dateString = singleStringValue
+  .transform((value) => {
+    if (!value) return undefined;
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? undefined : d;
+  })
+  .optional();
+
+// Helper to parse comma separated enum values (e.g. REMOTE,ONSITE)
+const commaSeparatedWorkModes = singleStringValue
+  .transform((value) => {
+    if (!value) return undefined;
+    return value
+      .split(",")
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0);
+  })
+  .pipe(z.array(workModeTypeEnum))
+  .optional();
+
 export const getPublicJobsQuerySchema = z.object({
-  q: optionalTrimmedString,
+  keyword: optionalTrimmedString,
   location: optionalTrimmedString,
   industry: optionalTrimmedString,
+  workModes: commaSeparatedWorkModes,
   employmentType: singleStringValue.pipe(employmentTypeEnum).optional(),
+  publishedAt: dateString,
+  sortBy: singleStringValue
+    .transform((value) => (value ? value : undefined))
+    .refine(
+      (value) => value === undefined || ["publishedAt", "relevance"].includes(value),
+      { message: "Invalid sortBy" },
+    )
+    .optional(),
+  sortOrder: singleStringValue
+    .transform((value) => (value ? value.toLowerCase() : undefined))
+    .refine(
+      (value) => value === undefined || ["asc", "desc"].includes(value),
+      { message: "Invalid sortOrder" },
+    )
+    .optional(),
   cursor: optionalObjectIdString,
   limit: limitSchema,
 });
